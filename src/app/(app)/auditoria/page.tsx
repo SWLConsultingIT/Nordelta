@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PageHead } from "@/components/ui";
+import { PageHeader } from "@/components/ui";
 import { getAuditoria } from "@/lib/data";
 import { TablaAuditoria } from "./Tabla";
 
@@ -9,12 +9,15 @@ export default async function AuditoriaPage() {
   const entradas = await getAuditoria(300);
   return (
     <>
-      <PageHead
-        title="Auditoría"
-        sub="Todo cambio sobre un movimiento, con quién lo hizo y cuándo"
+      <PageHeader
+        titulo="Auditoría"
+        contexto={[
+          "Solo agregado · nadie lo puede editar",
+          `${entradas.length} ${entradas.length === 1 ? "registro" : "registros"}`,
+        ]}
       />
       <TablaAuditoria entradas={entradas} />
-      <p className="mt-4 text-[12.5px] text-ink-3 max-w-[82ch]">
+      <p className="mt-4 t-secondary max-w-[82ch]">
         El registro es de solo agregado: nadie —tampoco un administrador— puede
         modificarlo ni borrarlo desde la aplicación.{" "}
         <span className="text-ink-2 font-medium">

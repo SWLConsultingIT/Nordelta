@@ -4,6 +4,38 @@ import { normalizarNombre } from "../domain/contrapartes";
 import { generarDataset } from "./dataset";
 
 /**
+ * Correcciones sembradas en la auditoría de la demostración.
+ *
+ * `desdeElFinal` es el índice negativo del movimiento del que toman la fecha
+ * y la referencia, así que siempre apuntan a algo que existe. La descripción
+ * es propia de la corrección: no se toma prestada del movimiento, para que la
+ * fila se lea coherente.
+ */
+const CORRECCIONES_DEMO = [
+  {
+    entidad: "movimiento", operacion: "UPDATE" as const, desdeElFinal: -22,
+    descripcion: "Cobro de factura 0001-00014892",
+    campo: "concepto", anterior: "Cobro factura", nuevo: "Cobro de factura 0001-00014892",
+    motivo: "Faltaba el número de comprobante", hora: "11:42",
+    actor: "operaciones@nordelta.com",
+  },
+  {
+    entidad: "movimiento", operacion: "UPDATE" as const, desdeElFinal: -35,
+    descripcion: "Liquidación de saldo",
+    campo: "categoria", anterior: "ingreso", nuevo: "full_pago",
+    motivo: "Cerraba la cuenta, no era un ingreso más", hora: "16:08",
+    actor: "santi@swlconsulting.com",
+  },
+  {
+    entidad: "partida", operacion: "UPDATE" as const, desdeElFinal: -48,
+    descripcion: "Pago mixto: efectivo y transferencia",
+    campo: "partidas", anterior: "2 partidas", nuevo: "3 partidas",
+    motivo: "Se había cargado en una sola línea un pago mixto", hora: "10:19",
+    actor: "operaciones@nordelta.com",
+  },
+];
+
+/**
  * Almacén de la demostración.
  *
  * Existe para que el producto se pueda usar de punta a punta sin Supabase,
@@ -52,6 +84,31 @@ class AlmacenDemo {
       this.registrar("movimiento", m.id, "INSERT", null, null, null,
         `${m.fecha}T${String(9 + (m.orden % 9)).padStart(2, "0")}:${String((m.orden * 7) % 60).padStart(2, "0")}:00`,
         "operaciones@nordelta.com", m.concepto);
+    }
+
+    // Correcciones históricas: sin ellas la pantalla solo muestra altas y no
+    // se ve lo que hace valiosa a la auditoría —el antes y el después—.
+    // Son registros de la demostración: no tocan ningún movimiento ni saldo.
+    for (const c of CORRECCIONES_DEMO) {
+      const m = this.movimientos.at(c.desdeElFinal);
+      if (!m) continue;
+      this.registrar(
+        c.entidad, m.id, c.operacion, c.campo, c.anterior, c.nuevo,
+        `${m.fecha}T${c.hora}:00`, c.actor, c.descripcion, c.motivo,
+      );
+    }
+
+    // Una contraparte que se había escrito mal. Es el caso que la planilla no
+    // podía evitar y la base ahora sí.
+    const cp = this.contrapartes.find((c) => c.nombre === "Electrónica Palermo SRL");
+    if (cp) {
+      this.registrar(
+        "contraparte", String(cp.id), "UPDATE", "nombre",
+        "Electronica Palermo", cp.nombre,
+        `${this.movimientos.at(-60)?.fecha ?? "2026-08-26"}T09:35:00`,
+        "santi@swlconsulting.com", cp.nombre,
+        "Nombre incompleto y sin tilde",
+      );
     }
   }
 

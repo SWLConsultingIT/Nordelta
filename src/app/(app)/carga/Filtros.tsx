@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Input, Segmented } from "@/components/ui";
+import { FilterTabs, Input } from "@/components/ui";
 import type { Oficina } from "@/lib/domain/types";
 
+/** Barra de contexto de la carga: qué día y qué oficina se está cargando. */
 export function FiltrosCarga({
   oficinas,
   fecha,
@@ -24,25 +25,19 @@ export function FiltrosCarga({
 
   return (
     <>
-      <label className="flex items-center gap-2">
-        <span className="label-mono">Día</span>
-        <Input
-          type="date"
-          aria-label="Día"
-          value={fecha}
-          onChange={(e) => e.target.value && ir({ fecha: e.target.value })}
-        />
-      </label>
-
-      <div className="ml-auto flex items-center gap-2">
-        <span className="label-mono">Oficina</span>
-        <Segmented
-          label="Oficina"
-          value={oficinaId}
-          onChange={(v) => ir({ oficina: String(v) })}
-          options={oficinas.map((o) => ({ value: o.id, label: o.nombre }))}
-        />
-      </div>
+      <Input
+        type="date"
+        aria-label="Día que se está cargando"
+        value={fecha}
+        onChange={(e) => e.target.value && ir({ fecha: e.target.value })}
+        className="h-8 text-[12.5px] w-[142px]"
+      />
+      <FilterTabs
+        label="Oficina"
+        value={oficinaId}
+        onChange={(v: number) => ir({ oficina: String(v) })}
+        options={oficinas.map((o) => ({ value: o.id, label: o.nombre }))}
+      />
     </>
   );
 }

@@ -1,7 +1,13 @@
 import { themeQuartz } from "ag-grid-community";
 
-/** Tema de AG Grid derivado de los tokens de la aplicación.
- *  Al referenciar variables CSS, sigue al tema claro y oscuro solo. */
+/**
+ * Tema de AG Grid derivado de los tokens de la aplicación.
+ *
+ * Al referenciar variables CSS sigue al tema claro y oscuro sin configurar
+ * nada aparte. Las alturas son deliberadamente compactas: el operador
+ * trabaja horas con esta tabla y cada píxel de fila es una fila menos a la
+ * vista.
+ */
 export const temaNordelta = themeQuartz.withParams({
   accentColor: "var(--color-brand)",
   backgroundColor: "var(--color-surface)",
@@ -16,12 +22,14 @@ export const temaNordelta = themeQuartz.withParams({
   selectedRowBackgroundColor: "var(--color-brand-wash)",
   rangeSelectionBorderColor: "var(--color-brand)",
   inputFocusBorder: "1px solid var(--color-brand)",
+  cellTextColor: "var(--color-ink)",
   fontFamily: "var(--font-sans)",
   fontSize: 13,
-  rowHeight: 36,
-  headerHeight: 34,
+  rowHeight: 34,
+  headerHeight: 32,
   cellHorizontalPadding: 10,
   borderRadius: 0,
   wrapperBorder: false,
   wrapperBorderRadius: 0,
+  columnBorder: true,
 });

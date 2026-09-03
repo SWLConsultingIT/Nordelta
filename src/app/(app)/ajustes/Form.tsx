@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Badge, Button, Card, CardBar, Field, Input, Monto, SinValor, Vacio, cx,
+  Badge, Button, Card, CardBar, Estado, Field, Input, Monto, Select, SinValor, Vacio, cx,
 } from "@/components/ui";
 import { IcoArrow } from "@/components/ui/icons";
 import { MONEDAS, type Moneda } from "@/lib/domain/types";
@@ -29,19 +29,24 @@ const VACIO: Montos = { ARS: "", USD: "", EUR: "", BRL: "" };
  *   previsualizar el resultado → confirmar
  *
  * El paso de previsualización es el que importa: antes de guardar, se ve
- * exactamente qué saldo va a quedar en cada moneda.
+ * exactamente qué saldo va a quedar en cada moneda. Va en vertical —
+ * actual, ajuste, resultante — porque así se lee como un asiento y no
+ * como una tabla apretada.
  */
 export function FormAjuste({
   cuentas,
   oficinas,
   fecha,
+  inicial = null,
 }: {
   cuentas: CuentaAjustable[];
   oficinas: Oficina[];
   fecha: string;
+  /** Contraparte preelegida, cuando se llega desde el libro de una cuenta. */
+  inicial?: number | null;
 }) {
   const router = useRouter();
-  const [id, setId] = useState<number | null>(null);
+  const [id, setId] = useState<number | null>(inicial);
   const [oficinaId, setOficinaId] = useState(oficinas[0]?.id ?? 1);
   const [montos, setMontos] = useState<Montos>(VACIO);
   const [concepto, setConcepto] = useState("");
@@ -76,6 +81,12 @@ export function FormAjuste({
   const quedaEnCero = elegida !== null && MONEDAS.every((m) => resultante[m] === 0);
   const hayAlgo = MONEDAS.some((m) => (parseMonto(montos[m]) ?? 0) !== 0);
   const puedeGuardar = elegida !== null && hayAlgo && invalidas.length === 0;
+
+  // Solo se muestran las monedas en juego: cuatro filas con tres en «—»
+  // hacen ruido y esconden la que importa.
+  const enJuego = MONEDAS.filter(
+    (m) => (elegida?.saldo[m] ?? 0) !== 0 || montos[m] !== "",
+  );
 
   function elegir(v: number | null) {
     setId(v);
@@ -120,62 +131,55 @@ export function FormAjuste({
   }
 
   return (
-    <div className="grid lg:grid-cols-[minmax(0,1fr)_368px] gap-5 items-start">
+    <div className="grid lg:grid-cols-[minmax(0,1fr)_384px] gap-5 items-start">
       <Card>
         <CardBar>
-          <span className="label-mono">Nuevo ajuste</span>
+          <span className="t-label">Nuevo ajuste</span>
           {elegida && (
-            <span className="ml-auto font-mono text-[11px] text-ink-3">
-              {fmtFecha(fecha)}
-            </span>
+            <span className="ml-auto t-num text-[11.5px] text-ink-3">{fmtFecha(fecha)}</span>
           )}
         </CardBar>
 
         <div className="p-4 flex flex-col gap-4">
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Contraparte">
-              <select
+              <Select
                 value={id ?? ""}
                 onChange={(e) => elegir(e.target.value ? Number(e.target.value) : null)}
-                className="h-9 rounded-lg bg-surface border border-line px-2.5 text-[13.5px]
-                           text-ink shadow-e1 focus:border-brand"
               >
                 <option value="">Elegí una contraparte…</option>
                 {conSaldo.map((c) => (
                   <option key={c.id} value={c.id}>{c.nombre}</option>
                 ))}
-              </select>
+              </Select>
             </Field>
 
             <Field label="Oficina">
-              <select
-                value={oficinaId}
-                onChange={(e) => setOficinaId(Number(e.target.value))}
-                className="h-9 rounded-lg bg-surface border border-line px-2.5 text-[13.5px]
-                           text-ink shadow-e1 focus:border-brand"
-              >
+              <Select value={oficinaId} onChange={(e) => setOficinaId(Number(e.target.value))}>
                 {oficinas.map((o) => (
                   <option key={o.id} value={o.id}>{o.nombre}</option>
                 ))}
-              </select>
+              </Select>
             </Field>
           </div>
 
           {!elegida ? (
-            <p className="text-[13px] text-ink-3 py-8 text-center">
-              Elegí una contraparte para ver su saldo y armar el ajuste.
-            </p>
+            <div className="py-10 text-center">
+              <p className="t-body text-ink-3 m-0">
+                Elegí una contraparte para ver su saldo y armar el ajuste.
+              </p>
+            </div>
           ) : (
             <>
               <div>
-                <span className="label-mono">Saldo actual</span>
+                <span className="t-label">Saldo actual</span>
                 <div className="mt-1.5 grid gap-2"
                      style={{ gridTemplateColumns: "repeat(auto-fit,minmax(132px,1fr))" }}>
                   {MONEDAS.map((m) => {
                     const v = elegida.saldo[m];
                     return (
-                      <div key={m} className="bg-raised border border-line rounded-lg px-3 py-2">
-                        <span className="label-mono">{m}</span>
+                      <div key={m} className="bg-raised border border-line rounded-xl px-3 py-2">
+                        <span className="t-label">{m}</span>
                         <div className="mt-0.5">
                           {v === 0 ? (
                             <SinValor />
@@ -195,13 +199,13 @@ export function FormAjuste({
                 <Button size="sm" variant="primary" onClick={() => { setMontos(propuesta); setHecho(null); }}>
                   Proponer ajuste a cero
                 </Button>
-                <span className="text-[12.5px] text-ink-3">
+                <span className="t-secondary">
                   Completa el asiento con el negativo de cada saldo.
                 </span>
               </div>
 
               <div>
-                <span className="label-mono">Monto del ajuste</span>
+                <span className="t-label">Monto del ajuste</span>
                 <div className="mt-1.5 grid gap-2"
                      style={{ gridTemplateColumns: "repeat(auto-fit,minmax(148px,1fr))" }}>
                   {MONEDAS.map((m) => {
@@ -209,17 +213,14 @@ export function FormAjuste({
                     const aplica = elegida.saldo[m] !== 0 || montos[m] !== "";
                     return (
                       <label key={m} className="flex flex-col gap-1">
-                        <span className={cx("font-mono text-[10px] tracking-wider",
-                                            aplica ? "text-ink-3" : "text-ink-4")}>
-                          {m}
-                        </span>
+                        <span className={cx("t-label", !aplica && "!text-ink-4")}>{m}</span>
                         <input
                           inputMode="decimal"
                           placeholder={aplica ? "0,00" : "—"}
                           value={montos[m]}
                           onChange={(e) => { setMontos({ ...montos, [m]: e.target.value }); setHecho(null); }}
                           className={cx(
-                            "h-9 rounded-lg border px-2.5 text-[13.5px] font-mono tnum text-right shadow-e1",
+                            "h-9 rounded-lg border px-2.5 text-[13.5px] t-num text-right shadow-e1",
                             malo
                               ? "bg-neg-wash border-neg text-neg"
                               : "bg-surface border-line text-ink focus:border-brand",
@@ -250,20 +251,20 @@ export function FormAjuste({
                 </Button>
 
                 {hecho && (
-                  <span role="status" aria-live="polite"
-                        className="flex items-center gap-2 text-[13px] text-pos font-medium">
-                    <span className="w-[7px] h-[7px] rounded-full bg-pos" />
-                    Ajuste registrado con {hecho.patas === 1 ? "1 partida" : `${hecho.patas} partidas`}
+                  <span role="status" aria-live="polite" className="flex items-center gap-2">
+                    <Estado tono="pos">
+                      Ajuste registrado con{" "}
+                      {hecho.patas === 1 ? "1 partida" : `${hecho.patas} partidas`}
+                    </Estado>
                     <Link href={`/cuentas/${hecho.contraparte}`}
-                          className="text-brand hover:underline inline-flex items-center gap-1">
+                          className="text-[12.5px] text-brand hover:underline inline-flex items-center gap-1">
                       Ver la cuenta <IcoArrow className="w-3.5 h-3.5" />
                     </Link>
                   </span>
                 )}
                 {error && (
-                  <span role="alert" className="flex items-center gap-2 text-[13px] text-neg font-medium">
-                    <span className="w-[7px] h-[7px] rounded-full bg-neg" />
-                    {error}
+                  <span role="alert">
+                    <Estado tono="neg">{error}</Estado>
                   </span>
                 )}
               </div>
@@ -272,58 +273,58 @@ export function FormAjuste({
         </div>
       </Card>
 
-      {/* Previsualización */}
+      {/* ── Previsualización vertical: actual → ajuste → resultante ── */}
       <Card>
         <CardBar>
-          <span className="label-mono">Cómo queda</span>
+          <span className="t-label">Cómo queda</span>
+          {elegida && (
+            <span className="ml-auto text-[12.5px] text-ink-2 font-medium truncate">
+              {elegida.nombre}
+            </span>
+          )}
         </CardBar>
 
         {!elegida ? (
-          <Vacio titulo="Sin contraparte elegida" texto="La previsualización aparece acá." />
+          <Vacio
+            compacto
+            titulo="Sin contraparte elegida"
+            texto="La previsualización del asiento aparece acá."
+          />
         ) : (
           <>
-            <div className="px-4 pt-3.5 pb-1 grid text-[10px] font-mono tracking-[0.1em]
-                            uppercase text-ink-4"
-                 style={{ gridTemplateColumns: "34px 1fr 14px 1fr 14px 1fr" }}>
-              <span />
-              <span className="text-right">Actual</span>
-              <span />
-              <span className="text-right">Ajuste</span>
-              <span />
-              <span className="text-right">Queda</span>
-            </div>
+            <Etapa
+              rotulo="Saldo actual"
+              nota="Como está hoy la cuenta"
+              monedas={enJuego}
+              valor={(m) => elegida.saldo[m]}
+              tinta={(v) => (v === 0 ? "text-ink-4" : v > 0 ? "text-pos" : "text-neg")}
+            />
 
-            <ul className="divide-y divide-line-soft">
-              {MONEDAS.map((m) => {
-                const antes = elegida.saldo[m];
-                const ajuste = parseMonto(montos[m]) ?? 0;
-                const despues = resultante[m];
-                if (antes === 0 && ajuste === 0) return null;
-                return (
-                  <li key={m} className="px-4 py-2.5 grid items-baseline gap-x-1 text-[12.5px]"
-                      style={{ gridTemplateColumns: "34px 1fr 14px 1fr 14px 1fr" }}>
-                    <span className="font-mono text-[10px] tracking-wider text-ink-3">{m}</span>
-                    <span className="text-right font-mono tnum text-ink-3">
-                      {antes === 0 ? "—" : antes.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                    </span>
-                    <span className="text-center text-ink-4">→</span>
-                    <span className={cx("text-right font-mono tnum",
-                                        ajuste === 0 ? "text-ink-4" : "text-brand")}>
-                      {ajuste === 0 ? "—" : ajuste.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                    </span>
-                    <span className="text-center text-ink-4">→</span>
-                    <span className={cx("text-right font-mono tnum font-semibold",
-                                        despues === 0 ? "text-pos" : despues < 0 ? "text-neg" : "text-ink")}>
-                      {despues.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
+            <Flecha signo="+" />
+
+            <Etapa
+              rotulo="Ajuste a registrar"
+              nota="El asiento que se va a crear"
+              monedas={enJuego}
+              valor={(m) => parseMonto(montos[m]) ?? 0}
+              tinta={(v) => (v === 0 ? "text-ink-4" : "text-brand")}
+              conSigno
+            />
+
+            <Flecha signo="=" />
+
+            <Etapa
+              rotulo="Saldo resultante"
+              nota={quedaEnCero ? "Las cuatro monedas en cero" : "Después de registrar el ajuste"}
+              monedas={enJuego}
+              valor={(m) => resultante[m]}
+              tinta={(v) => (v === 0 ? "text-pos" : v < 0 ? "text-neg" : "text-ink")}
+              destacada
+            />
 
             <div className={cx(
               "px-4 py-3 border-t text-[12.5px] leading-relaxed",
-              quedaEnCero ? "bg-pos-wash border-pos/25 text-pos" : "bg-raised border-line text-ink-3",
+              quedaEnCero ? "bg-pos-wash border-pos-line text-pos" : "bg-raised border-line text-ink-3",
             )}>
               {quedaEnCero ? (
                 <>
@@ -340,12 +341,81 @@ export function FormAjuste({
 
             {elegida.cerrada && (
               <div className="px-4 py-2.5 border-t border-line">
-                <Badge tone="pos">Esta cuenta ya estaba cerrada</Badge>
+                <Badge tono="pos">Esta cuenta ya estaba cerrada</Badge>
               </div>
             )}
           </>
         )}
       </Card>
+    </div>
+  );
+}
+
+/** Una de las tres etapas del asiento. */
+function Etapa({
+  rotulo,
+  nota,
+  monedas,
+  valor,
+  tinta,
+  conSigno,
+  destacada,
+}: {
+  rotulo: string;
+  nota: string;
+  monedas: Moneda[];
+  valor: (m: Moneda) => number;
+  tinta: (v: number) => string;
+  conSigno?: boolean;
+  destacada?: boolean;
+}) {
+  return (
+    <div className={cx("px-4 py-3", destacada && "bg-raised")}>
+      <div className="flex items-baseline gap-2">
+        <span className={cx("t-label", destacada && "!text-ink-2")}>{rotulo}</span>
+        <span className="text-[11px] text-ink-4 truncate">{nota}</span>
+      </div>
+
+      {monedas.length === 0 ? (
+        <p className="mt-1 t-num text-[13px] text-ink-4 m-0">sin monedas en juego</p>
+      ) : (
+        <ul className="mt-1.5 flex flex-col gap-1">
+          {monedas.map((m) => {
+            const v = valor(m);
+            return (
+              <li key={m} className="flex items-baseline justify-between gap-3">
+                <span className="t-label !tracking-[0.1em]">{m}</span>
+                {v === 0 ? (
+                  <SinValor className="text-[14px]" />
+                ) : (
+                  <Monto
+                    valor={v}
+                    moneda={m}
+                    conSigno={conSigno}
+                    className={cx(
+                      destacada ? "text-[16px] font-semibold" : "text-[14px] font-medium",
+                      tinta(v),
+                    )}
+                  />
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Conector entre etapas: el operador de la cuenta, en el hilo vertical. */
+function Flecha({ signo }: { signo: "+" | "=" }) {
+  return (
+    <div className="relative h-0 border-t border-line" aria-hidden>
+      <span className="absolute left-4 -top-[9px] w-[18px] h-[18px] rounded-full bg-surface
+                       border border-line grid place-items-center t-num text-[11px]
+                       leading-none text-ink-3">
+        {signo}
+      </span>
     </div>
   );
 }

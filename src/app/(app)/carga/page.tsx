@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { CargaGrid, type FilaCarga } from "@/components/grid/CargaGrid";
-import { Button, Card, CardBar, CardFoot, PageHead } from "@/components/ui";
+import { Button, PageHeader } from "@/components/ui";
+import { IcoDescargar } from "@/components/ui/icons";
 import { getContrapartes, getMovimientosDelDia, getOficinas } from "@/lib/data";
 import { HOY_DEMO } from "@/lib/data/dataset";
 import { esFechaISOValida, fmtFechaLarga } from "@/lib/format";
-import { FiltrosCarga } from "./Filtros";
 
-export const metadata: Metadata = { title: "Carga de movimientos" };
+export const metadata: Metadata = { title: "Carga" };
 
 export default async function CargaPage({
   searchParams,
@@ -44,56 +44,27 @@ export default async function CargaPage({
 
   return (
     <>
-      <PageHead
-        title="Carga de movimientos"
-        sub={`${fmtFechaLarga(fecha)} · ${oficina}`}
-        actions={
+      <PageHeader
+        titulo="Carga de movimientos"
+        contexto={[fmtFechaLarga(fecha), oficina]}
+        acciones={
           <a href={`/api/export?tipo=carga&fecha=${fecha}&oficina=${oficinaId}`} download>
-            <Button>Exportar CSV</Button>
+            <Button>
+              <IcoDescargar className="w-[14px] h-[14px]" />
+              Exportar
+            </Button>
           </a>
         }
       />
 
-      <Card>
-        <CardBar>
-          <FiltrosCarga oficinas={oficinas} fecha={fecha} oficinaId={oficinaId} />
-        </CardBar>
-
-        <CargaGrid
-          filasIniciales={filas}
-          contrapartes={contrapartes}
-          fecha={fecha}
-          oficinaId={oficinaId}
-        />
-
-        <CardFoot>
-          <span><Kbd>Tab</Kbd> celda</span>
-          <span><Kbd>Enter</Kbd> fila</span>
-          <span><Kbd>Supr</Kbd> vaciar</span>
-          <span><Kbd>⌘Z</Kbd> deshacer</span>
-          <span className="text-brand font-medium">
-            Podés pegar filas directamente desde Excel
-          </span>
-        </CardFoot>
-      </Card>
-
-      <p className="mt-4 text-[12.5px] text-ink-3 max-w-[82ch]">
-        Una fila es una partida: un solo monto con su moneda y su medio de pago.
-        Un movimiento que combina efectivo y transferencia son dos filas —{" "}
-        <span className="text-ink-2 font-medium">
-          y por eso ninguna pata puede perderse cuando la otra tiene tipo de cambio
-        </span>
-        . Los egresos van en negativo.
-      </p>
+      <CargaGrid
+        filasIniciales={filas}
+        contrapartes={contrapartes}
+        fecha={fecha}
+        oficinaId={oficinaId}
+        oficinas={oficinas}
+      />
     </>
-  );
-}
-
-function Kbd({ children }: { children: React.ReactNode }) {
-  return (
-    <kbd className="font-mono text-[10.5px] bg-surface border border-line border-b-2 rounded px-1.5 text-ink-2">
-      {children}
-    </kbd>
   );
 }
 

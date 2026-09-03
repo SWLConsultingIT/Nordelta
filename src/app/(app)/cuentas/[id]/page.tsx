@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Button, PageHead } from "@/components/ui";
+import { Button, Estado, PageHeader } from "@/components/ui";
+import { IcoArrow, IcoDescargar } from "@/components/ui/icons";
 import {
   getContraparte, getMovimientosDeContraparte, getOficinas,
 } from "@/lib/data";
 import { construirCtaCte } from "@/lib/domain/saldos";
 import { calcularImpacto } from "@/lib/domain/fx";
+import { MONEDAS } from "@/lib/domain/types";
 import { ErrorNoEncontrado } from "@/lib/domain/errors";
 import { Libro, type FilaLibro } from "./Libro";
 
@@ -38,6 +40,8 @@ export default async function CuentaPage({ params }: { params: Promise<{ id: str
   ]);
 
   const ctaCte = construirCtaCte(movimientos);
+  const saldoFinal = ctaCte.at(-1)?.saldo;
+  const tieneSaldo = saldoFinal ? MONEDAS.some((m) => saldoFinal[m] !== 0) : false;
   const oficina = (oid: number) => oficinas.find((o) => o.id === oid)?.nombre ?? "—";
 
   const filas: FilaLibro[] = ctaCte.map((f) => ({
@@ -65,14 +69,35 @@ export default async function CuentaPage({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <PageHead
-        title={contraparte.nombre}
-        sub="Cuenta corriente"
-        actions={
+      <PageHeader
+        titulo={contraparte.nombre}
+        contexto={[
+          "Cuenta corriente",
+          `${filas.length} ${filas.length === 1 ? "movimiento" : "movimientos"}`,
+          filas.some((f) => f.esCierre) ? (
+            <Estado tono="pos">Con cierre registrado</Estado>
+          ) : (
+            <Estado tono="brand">Sin cierres</Estado>
+          ),
+        ]}
+        acciones={
           <>
-            <Link href="/cuentas"><Button>Volver a cuentas</Button></Link>
+            <Link href="/cuentas">
+              <Button>
+                <IcoArrow className="w-[14px] h-[14px] rotate-180" />
+                Cuentas
+              </Button>
+            </Link>
+            {tieneSaldo && (
+              <Link href={`/ajustes?cuenta=${id}`}>
+                <Button>Ajustar a cero</Button>
+              </Link>
+            )}
             <a href={`/api/export?tipo=cta&id=${id}`} download>
-              <Button variant="primary">Exportar CSV</Button>
+              <Button variant="primary">
+                <IcoDescargar className="w-[14px] h-[14px]" />
+                Exportar CSV
+              </Button>
             </a>
           </>
         }

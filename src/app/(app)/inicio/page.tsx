@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Badge, Button, Card, CardBar, Monto, PageHead, SinValor, Vacio, cx,
+  Badge, Button, Card, CardBar, CardFoot, Estado, Monto, PageHeader,
+  SinValor, TablaShell, Th, Vacio, cx,
 } from "@/components/ui";
-import { IcoArrow, IcoGrid, IcoPeople, IcoBars } from "@/components/ui/icons";
+import {
+  IcoArrow, IcoBars, IcoCheque, IcoGrid, IcoPeople, IcoShield,
+} from "@/components/ui/icons";
 import {
   getContrapartes, getOficinas, getResumenDelDia, getTodosLosMovimientos,
 } from "@/lib/data";
@@ -16,10 +19,11 @@ import { fmtFecha, fmtFechaLarga } from "@/lib/format";
 export const metadata: Metadata = { title: "Inicio" };
 
 /**
- * Home operativo.
+ * Centro de operaciones.
  *
- * Responde una sola pregunta: qué está pasando hoy. Cuatro bloques y nada
- * más — un tablero lleno de indicadores no ayuda a operar.
+ * Responde una sola pregunta: qué está pasando hoy. Primero el neto del día,
+ * que es el número por el que se pregunta; después la actividad y lo que
+ * requiere atención. Un tablero lleno de indicadores no ayuda a operar.
  */
 export default async function InicioPage() {
   const hoy = HOY_DEMO;
@@ -33,6 +37,7 @@ export default async function InicioPage() {
   const nombre = (id: number | null) => contrapartes.find((c) => c.id === id)?.nombre ?? "—";
   const oficina = (id: number) => oficinas.find((o) => o.id === id)?.nombre ?? "—";
 
+  const delDia = movimientos.filter((m) => m.fecha === hoy);
   const recientes = [...movimientos]
     .sort((a, b) => (a.fecha === b.fecha ? b.orden - a.orden : a.fecha < b.fecha ? 1 : -1))
     .slice(0, 10);
@@ -41,13 +46,18 @@ export default async function InicioPage() {
   const monedasDelDia = MONEDAS.filter(
     (m) => resumen.ingresos[m] || resumen.egresos[m] || resumen.neto[m],
   );
+  const contrapartesDelDia = new Set(delDia.map((m) => m.contraparte_id).filter(Boolean)).size;
 
   return (
     <>
-      <PageHead
-        title="Inicio"
-        sub={fmtFechaLarga(hoy)}
-        actions={
+      <PageHeader
+        titulo="Hoy"
+        contexto={[
+          fmtFechaLarga(hoy),
+          `${resumen.movimientos} ${resumen.movimientos === 1 ? "movimiento cargado" : "movimientos cargados"}`,
+          <Estado key="e" tono="pos">Saldos al día</Estado>,
+        ]}
+        acciones={
           <Link href="/carga">
             <Button variant="primary">
               Cargar movimientos <IcoArrow className="w-4 h-4" />
@@ -56,12 +66,12 @@ export default async function InicioPage() {
         }
       />
 
-      {/* ── Movimiento del día ── */}
+      {/* ── Neto del día por moneda ───────────────────────────── */}
       <Card className="mb-5">
         <CardBar>
-          <span className="label-mono">Movimiento del día</span>
-          <span className="ml-auto font-mono text-[11px] text-ink-3 tabular-nums">
-            {resumen.movimientos} {resumen.movimientos === 1 ? "movimiento" : "movimientos"}
+          <span className="t-label">Movimiento del día</span>
+          <span className="ml-auto t-num text-[11.5px] text-ink-4">
+            {contrapartesDelDia} {contrapartesDelDia === 1 ? "contraparte" : "contrapartes"}
           </span>
         </CardBar>
 
@@ -69,50 +79,57 @@ export default async function InicioPage() {
           <Vacio
             titulo="Todavía no se cargó nada hoy"
             texto="Cuando cargues el primer movimiento vas a ver acá el neto del día por moneda."
-            accion={<Link href="/carga"><Button size="sm" variant="primary">Cargar movimientos</Button></Link>}
+            accion={
+              <Link href="/carga">
+                <Button size="sm" variant="primary">Cargar movimientos</Button>
+              </Link>
+            }
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13px] min-w-[560px]">
-              <thead>
-                <tr className="border-b border-line">
-                  <th className="text-left label-mono font-medium px-4 py-2.5" />
-                  {monedasDelDia.map((m) => (
-                    <th key={m} className="text-right label-mono font-medium px-4 py-2.5">{m}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <FilaResumen etiqueta="Ingresos" valores={resumen.ingresos} monedas={monedasDelDia} tono="pos" />
-                <FilaResumen etiqueta="Pagos" valores={resumen.egresos} monedas={monedasDelDia} tono="neg" />
-                <tr className="border-t-2 border-line bg-raised">
-                  <td className="px-4 py-3 text-[13px] font-semibold text-ink">Neto</td>
-                  {monedasDelDia.map((m) => {
-                    const v = resumen.neto[m] ?? 0;
-                    return (
-                      <td key={m} className="px-4 py-3 text-right">
-                        {v === 0 ? (
-                          <SinValor />
-                        ) : (
-                          <Monto valor={v} moneda={m}
-                                 className={cx("font-semibold text-[14px]",
-                                               v > 0 ? "text-pos" : "text-neg")} />
+          <div
+            className="grid divide-y divide-line md:divide-y-0 md:divide-x"
+            style={{ gridTemplateColumns: `repeat(${monedasDelDia.length}, minmax(0,1fr))` }}
+          >
+            {monedasDelDia.map((m) => {
+              const neto = resumen.neto[m] ?? 0;
+              const ing = resumen.ingresos[m] ?? 0;
+              const egr = resumen.egresos[m] ?? 0;
+              return (
+                <div key={m} className="px-4 py-4 min-w-0">
+                  <span className="t-label">Neto {m}</span>
+                  <div className="mt-1">
+                    {neto === 0 ? (
+                      <span className="t-num text-[26px] text-ink-4">—</span>
+                    ) : (
+                      <Monto
+                        valor={neto}
+                        moneda={m}
+                        conSigno
+                        tamano="xl"
+                        className={cx(
+                          "text-[26px] font-semibold",
+                          neto > 0 ? "text-pos" : "text-neg",
                         )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              </tbody>
-            </table>
+                      />
+                    )}
+                  </div>
+
+                  <div className="mt-2.5 pt-2.5 border-t border-line-soft flex flex-col gap-1">
+                    <Renglon etiqueta="Ingresos" valor={ing} moneda={m} tono="pos" />
+                    <Renglon etiqueta="Pagos" valor={egr} moneda={m} tono="neg" />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </Card>
 
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start">
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_318px] gap-5 items-start">
         {/* ── Actividad reciente ── */}
         <Card>
           <CardBar>
-            <span className="label-mono">Actividad reciente</span>
+            <span className="t-label">Actividad reciente</span>
             <Link href="/carga" className="ml-auto text-[12.5px] text-brand hover:underline">
               Ir a la carga
             </Link>
@@ -121,91 +138,102 @@ export default async function InicioPage() {
           {recientes.length === 0 ? (
             <Vacio titulo="Sin actividad" texto="Todavía no hay movimientos cargados." />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-[13px] min-w-[620px]">
-                <thead>
-                  <tr className="border-b border-line bg-raised">
-                    <th className="text-left label-mono font-medium px-4 py-2.5">Fecha</th>
-                    <th className="text-left label-mono font-medium px-4 py-2.5">Contraparte</th>
-                    <th className="text-left label-mono font-medium px-4 py-2.5">Detalle</th>
-                    <th className="text-right label-mono font-medium px-4 py-2.5">Impacto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recientes.map((m) => {
-                    const impacta = CATEGORIAS_QUE_IMPACTAN.has(m.categoria);
-                    const imp = impactoPorMoneda(m.partidas);
-                    return (
-                      <tr key={m.id} className="border-b border-line-soft last:border-0 hover:bg-raised group">
-                        <td className="px-4 py-2.5 font-mono text-[12px] text-ink-3 whitespace-nowrap">
-                          {fmtFecha(m.fecha)}
-                        </td>
-                        <td className="px-4 py-2.5 whitespace-nowrap">
-                          {m.contraparte_id ? (
-                            <Link href={`/cuentas/${m.contraparte_id}`}
-                                  className="text-ink font-medium group-hover:text-brand group-hover:underline">
-                              {nombre(m.contraparte_id)}
-                            </Link>
-                          ) : (
-                            <span className="text-ink-4">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2.5 text-ink-2">
-                          {m.concepto}
-                          <span className="ml-2 font-mono text-[10.5px] text-ink-4">
-                            {oficina(m.oficina_id)}
+            <TablaShell minWidth={620}>
+              <thead>
+                <tr className="border-b border-line bg-raised">
+                  <Th>Fecha</Th>
+                  <Th>Contraparte</Th>
+                  <Th>Detalle</Th>
+                  <Th derecha>Impacto</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {recientes.map((m) => {
+                  const impacta = CATEGORIAS_QUE_IMPACTAN.has(m.categoria);
+                  const imp = impactoPorMoneda(m.partidas);
+                  return (
+                    <tr key={m.id} className="border-b border-line-soft last:border-0 hover:bg-raised group">
+                      <td className="px-4 py-2.5 t-num text-[12px] text-ink-3 whitespace-nowrap">
+                        {fmtFecha(m.fecha)}
+                      </td>
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        {m.contraparte_id ? (
+                          <Link href={`/cuentas/${m.contraparte_id}`}
+                                className="text-[13.5px] text-ink font-medium group-hover:text-brand">
+                            {nombre(m.contraparte_id)}
+                          </Link>
+                        ) : (
+                          <SinValor />
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 text-[13.5px] text-ink-2">
+                        {m.concepto}
+                        <span className="ml-2 t-num text-[10.5px] text-ink-4">
+                          {oficina(m.oficina_id)}
+                        </span>
+                        {!impacta && (
+                          <span className="ml-2"><Badge>{ETIQUETA_CATEGORIA[m.categoria]}</Badge></span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                        {!impacta ? (
+                          <span className="t-num text-[11px] text-ink-4">no impacta</span>
+                        ) : (
+                          <span className="inline-flex flex-col items-end gap-0.5">
+                            {(Object.entries(imp) as [Moneda, number][]).map(([mon, v]) => (
+                              <Monto key={mon} valor={v} moneda={mon} conSigno
+                                     className={cx("text-[12.5px]", v < 0 ? "text-neg" : "text-pos")} />
+                            ))}
                           </span>
-                          {!impacta && (
-                            <span className="ml-2"><Badge>{ETIQUETA_CATEGORIA[m.categoria]}</Badge></span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                          {!impacta ? (
-                            <span className="font-mono text-[11px] text-ink-4">no impacta</span>
-                          ) : (
-                            <span className="inline-flex flex-col items-end gap-0.5">
-                              {(Object.entries(imp) as [Moneda, number][]).map(([mon, v]) => (
-                                <Monto key={mon} valor={v} moneda={mon} conSigno
-                                       className={cx("text-[12.5px]", v < 0 ? "text-neg" : "text-pos")} />
-                              ))}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </TablaShell>
           )}
+
+          <CardFoot>
+            <span className="t-num text-[12px] text-ink-2">
+              Últimos {recientes.length} de {movimientos.length}
+            </span>
+            <span className="ml-auto t-secondary">
+              El saldo de cada cuenta se recalcula al consultarlo
+            </span>
+          </CardFoot>
         </Card>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-5">
           {/* ── Requiere atención ── */}
           <Card>
             <CardBar>
-              <span className="label-mono">Requiere atención</span>
+              <span className="t-label">Requiere atención</span>
             </CardBar>
-            <ul className="divide-y divide-line-soft text-[13px]">
+            <ul className="divide-y divide-line-soft">
               <Item
+                Icon={IcoCheque}
                 etiqueta="Cheques cargados hoy"
                 valor={resumen.chequesDelDia}
                 nota="Impactan la cuenta en su fecha de cobro"
               />
               <Item
+                Icon={IcoBars}
                 etiqueta="Movimientos sin impacto"
                 valor={resumen.sinImpacto}
                 nota="Compras, ventas e impuestos, por definición"
               />
-              <Item etiqueta="Celdas con error de tipo" valor={0} bien />
-              <Item etiqueta="Contrapartes duplicadas" valor={0} bien />
+              <Item Icon={IcoShield} etiqueta="Celdas con error de tipo" valor={0} bien
+                    nota="La base rechaza un texto en una columna de importe" />
+              <Item Icon={IcoPeople} etiqueta="Contrapartes duplicadas" valor={0} bien
+                    nota="Unicidad garantizada por la base, no por convención" />
             </ul>
           </Card>
 
-          {/* ── Acciones rápidas ── */}
+          {/* ── Accesos ── */}
           <Card>
             <CardBar>
-              <span className="label-mono">Ir a</span>
+              <span className="t-label">Ir a</span>
             </CardBar>
             <ul className="divide-y divide-line-soft">
               <Acceso href="/carga" Icon={IcoGrid} titulo="Cargar movimientos"
@@ -222,55 +250,67 @@ export default async function InicioPage() {
   );
 }
 
-function FilaResumen({
+/** Renglón de apoyo debajo del neto: ingresos y pagos del día. */
+function Renglon({
   etiqueta,
-  valores,
-  monedas,
+  valor,
+  moneda,
   tono,
 }: {
   etiqueta: string;
-  valores: Partial<Record<Moneda, number>>;
-  monedas: Moneda[];
+  valor: number;
+  moneda: Moneda;
   tono: "pos" | "neg";
 }) {
   return (
-    <tr className="border-b border-line-soft">
-      <td className="px-4 py-2.5 text-ink-2">{etiqueta}</td>
-      {monedas.map((m) => {
-        const v = valores[m] ?? 0;
-        return (
-          <td key={m} className="px-4 py-2.5 text-right">
-            {v === 0 ? (
-              <SinValor />
-            ) : (
-              <Monto valor={v} moneda={m} className={tono === "pos" ? "text-pos" : "text-neg"} />
-            )}
-          </td>
-        );
-      })}
-    </tr>
+    <span className="flex items-baseline justify-between gap-2">
+      <span className="text-[11.5px] text-ink-3">{etiqueta}</span>
+      {valor === 0 ? (
+        <SinValor className="text-[12px]" />
+      ) : (
+        <Monto
+          valor={valor}
+          moneda={moneda}
+          tamano="sm"
+          className={cx("text-[12.5px]", tono === "pos" ? "text-pos" : "text-neg")}
+        />
+      )}
+    </span>
   );
 }
 
 function Item({
+  Icon,
   etiqueta,
   valor,
   nota,
   bien,
 }: {
+  Icon: (p: { className?: string }) => React.ReactNode;
   etiqueta: string;
   valor: number;
   nota?: string;
   bien?: boolean;
 }) {
+  const enCero = valor === 0;
   return (
     <li className="px-4 py-3 flex items-start gap-3">
-      <span className="flex-1">
-        <span className="block text-ink-2">{etiqueta}</span>
-        {nota && <span className="block text-[11.5px] text-ink-4 mt-0.5">{nota}</span>}
+      <span
+        className={cx(
+          "w-7 h-7 rounded-lg grid place-items-center flex-none mt-px",
+          bien && enCero ? "bg-pos-wash text-pos" : enCero ? "bg-line-soft text-ink-4" : "bg-brand-wash text-brand",
+        )}
+      >
+        <Icon className="w-[14px] h-[14px]" />
       </span>
-      <span className={cx("font-mono tnum text-[15px] font-semibold",
-                          bien && valor === 0 ? "text-pos" : valor === 0 ? "text-ink-4" : "text-ink")}>
+      <span className="flex-1 min-w-0">
+        <span className="block text-[13px] text-ink-2">{etiqueta}</span>
+        {nota && <span className="block text-[11px] text-ink-4 mt-0.5">{nota}</span>}
+      </span>
+      <span className={cx(
+        "t-num text-[16px] font-semibold",
+        bien && enCero ? "text-pos" : enCero ? "text-ink-4" : "text-ink",
+      )}>
         {valor}
       </span>
     </li>

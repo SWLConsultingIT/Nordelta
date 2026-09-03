@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, CardBar } from "@/components/ui";
+import { Button, Card, CardBar, Estado } from "@/components/ui";
 import { reiniciarDatosDemo } from "./reinicio";
 
 /**
@@ -21,10 +21,10 @@ export function ReiniciarDemo() {
   return (
     <Card className="mt-8 max-w-[560px]">
       <CardBar>
-        <span className="label-mono">Modo demostración</span>
+        <span className="t-label">Modo demostración</span>
       </CardBar>
       <div className="p-4">
-        <p className="text-[13px] text-ink-2 leading-relaxed">
+        <p className="t-body text-ink-2 mx-0 mt-0 mb-0">
           Restablecer devuelve los datos al estado inicial: se pierden los
           movimientos, las ediciones y los ajustes que hayas cargado en esta
           sesión. Sirve para repetir un recorrido de demostración.
@@ -61,14 +61,9 @@ export function ReiniciarDemo() {
           )}
 
           {listo && (
-            <span role="status" className="flex items-center gap-2 text-[13px] text-pos font-medium">
-              <span className="w-[7px] h-[7px] rounded-full bg-pos" />
-              Datos restablecidos
-            </span>
+            <span role="status"><Estado tono="pos">Datos restablecidos</Estado></span>
           )}
-          {error && (
-            <span role="alert" className="text-[13px] text-neg font-medium">{error}</span>
-          )}
+          {error && <span role="alert"><Estado tono="neg">{error}</Estado></span>}
         </div>
       </div>
     </Card>

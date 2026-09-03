@@ -1,20 +1,34 @@
 import type { Metadata } from "next";
-import { PageHead } from "@/components/ui";
+import { PageHeader } from "@/components/ui";
 import { esDemo, getContrapartesConSaldo, getOficinas } from "@/lib/data";
 import { HOY_DEMO } from "@/lib/data/dataset";
+import { fmtFechaLarga } from "@/lib/format";
 import { FormAjuste } from "./Form";
 import { ReiniciarDemo } from "./ReiniciarDemo";
 
 export const metadata: Metadata = { title: "Ajustes de cuenta" };
 
-export default async function AjustesPage() {
-  const [cuentas, oficinas] = await Promise.all([getContrapartesConSaldo(), getOficinas()]);
+export default async function AjustesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cuenta?: string }>;
+}) {
+  const [cuentas, oficinas, params] = await Promise.all([
+    getContrapartesConSaldo(),
+    getOficinas(),
+    searchParams,
+  ]);
+
+  // Se puede llegar acá desde el libro de una cuenta con la contraparte ya
+  // elegida: ?cuenta=<id>.
+  const pedida = Number(params.cuenta);
+  const inicial = Number.isInteger(pedida) && cuentas.some((c) => c.id === pedida) ? pedida : null;
 
   return (
     <>
-      <PageHead
-        title="Ajustes de cuenta"
-        sub="Corrección para llevar la cuenta corriente de una contraparte a cero"
+      <PageHeader
+        titulo="Ajuste de cuenta"
+        contexto={["Lleva una cuenta corriente a cero", fmtFechaLarga(HOY_DEMO)]}
       />
 
       <FormAjuste
@@ -23,9 +37,10 @@ export default async function AjustesPage() {
           .map((c) => ({ id: c.id, nombre: c.nombre, saldo: c.saldo, cerrada: c.cerrada }))}
         oficinas={oficinas}
         fecha={HOY_DEMO}
+        inicial={inicial}
       />
 
-      <p className="mt-4 text-[12.5px] text-ink-3 max-w-[82ch]">
+      <p className="mt-4 t-secondary max-w-[82ch]">
         Un ajuste no toca ningún saldo: genera un{" "}
         <span className="text-ink-2 font-medium">movimiento contable explícito</span> con categoría
         de ajuste y una partida por cada moneda con saldo. Cuando las cuatro
