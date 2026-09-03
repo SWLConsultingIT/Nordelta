@@ -25,9 +25,13 @@ Front completo. Corre con datos de muestra hasta que se configure Supabase.
 ```bash
 npm install
 npm run dev          # http://localhost:3000
-npm test             # 203 casos, incluida la paridad contra PostgreSQL real
+npm test             # 246 casos, incluida la paridad contra PostgreSQL real
+npm run test:supabase  # 54 casos contra un Supabase real (necesita credenciales)
 npm run verificar    # tests + typecheck
 npm run build
+
+# Importar datos legacy sin escribir nada
+npm run migrar:legacy -- --dry-run <archivo.csv> --hoja "<nombre>"
 ```
 
 Si `npm install` falla con `EACCES`, el caché global tiene archivos con dueño
@@ -71,6 +75,11 @@ pierde la segunda del saldo. Ver `npm run verificar`.
 | `docs/LEGACY_BUGS.md` | Los seis defectos del sistema viejo, con su regresión |
 | `docs/OPEN_BUSINESS_DECISIONS.md` | Las catorce decisiones que faltan del negocio |
 | `docs/RECONCILIATION_STRATEGY.md` | Cómo se concilia contra el legacy |
+| `docs/SUPABASE_VALIDATION.md` | Cómo correr la suite de integración |
+| `docs/LUCHO_MEETING.md` | Agenda de una hora, en lenguaje de negocio |
+| `docs/CARGA_USABILITY_TEST.md` | Protocolo Excel contra web |
+| `docs/PARALLEL_RUN.md` | Runbook de la marcha en paralelo |
+| `docs/PRODUCTION_READINESS.md` | Checklist con evidencia |
 
 ## Reglas verificadas contra producción
 
