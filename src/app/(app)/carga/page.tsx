@@ -58,10 +58,17 @@ export default async function CargaPage({
         <CardBar>
           <FiltrosCarga oficinas={oficinas} fecha={fecha} oficinaId={oficinaId} />
         </CardBar>
-        <CargaGrid filasIniciales={filas} contrapartes={contrapartes} />
+        <CargaGrid
+          filasIniciales={filas}
+          contrapartes={contrapartes}
+          fecha={fecha}
+          oficinaId={oficinaId}
+        />
         <CardFoot>
           <span><Kbd>Tab</Kbd> celda</span>
           <span><Kbd>Enter</Kbd> fila</span>
+          <span><Kbd>Supr</Kbd> vaciar</span>
+          <span><Kbd>⌘Z</Kbd> deshacer</span>
           <span>Pegá un bloque desde Excel sobre cualquier celda</span>
         </CardFoot>
       </Card>

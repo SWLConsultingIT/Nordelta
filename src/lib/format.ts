@@ -7,7 +7,7 @@
  * base terminan mostrando números distintos.
  */
 import type { Moneda } from "./domain/types";
-import { formatear, partir, parsearNumero, DECIMALES_SALDO } from "./domain/dinero";
+import { formatear, partir, DECIMALES_SALDO } from "./domain/dinero";
 
 export { parsearNumero as parseMonto, redondear, esCero } from "./domain/dinero";
 
