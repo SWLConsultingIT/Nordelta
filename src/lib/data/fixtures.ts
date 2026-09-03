@@ -61,3 +61,15 @@ export const MOVIMIENTOS: Movimiento[] = [
   { id: "m22", fecha: "2026-09-01", oficina_id: 4, contraparte_id: 2, concepto: "Cobro cheque", categoria: "ingreso", orden: 1, partidas: [ch("ARS", 980000)] },
   { id: "m23", fecha: "2026-09-01", oficina_id: 1, contraparte_id: 7, concepto: "Compra de divisa", categoria: "compra", orden: 2, partidas: [ef("ARS", 1480000, 1480)] },
 ];
+
+export const AUDITORIA: import("../domain/types").EntradaAuditoria[] = [
+  { id: "a1", ocurrido_en: "2026-09-03T14:42:11", actor: "santi@swlconsulting.com", operacion: "UPDATE", entidad: "movimiento", referencia: "m17", campo: "tipo_cambio", valor_anterior: "1480", valor_nuevo: "1485", motivo: "Corrección de cotización del día" },
+  { id: "a2", ocurrido_en: "2026-09-03T14:38:02", actor: "operaciones@nordelta.com", operacion: "INSERT", entidad: "movimiento", referencia: "m17", campo: null, valor_anterior: null, valor_nuevo: null, motivo: null },
+  { id: "a3", ocurrido_en: "2026-09-03T11:20:47", actor: "operaciones@nordelta.com", operacion: "UPDATE", entidad: "movimiento", referencia: "m13", campo: "monto_nominal", valor_anterior: "-1150000", valor_nuevo: "-1200000", motivo: "Ajuste por diferencia de alquiler" },
+  { id: "a4", ocurrido_en: "2026-09-03T09:15:33", actor: "operaciones@nordelta.com", operacion: "INSERT", entidad: "movimiento", referencia: "m10", campo: null, valor_anterior: null, valor_nuevo: null, motivo: null },
+  { id: "a5", ocurrido_en: "2026-09-02T18:04:19", actor: "santi@swlconsulting.com", operacion: "DELETE", entidad: "movimiento", referencia: "m19", campo: null, valor_anterior: "Ingreso duplicado por error de carga", valor_nuevo: null, motivo: "Cargado dos veces" },
+  { id: "a6", ocurrido_en: "2026-09-02T16:51:08", actor: "operaciones@nordelta.com", operacion: "UPDATE", entidad: "contraparte", referencia: "9", campo: "nombre", valor_anterior: "ibarra, c.", valor_nuevo: "Ibarra, C.", motivo: "Normalización de mayúsculas" },
+  { id: "a7", ocurrido_en: "2026-09-02T10:12:55", actor: "operaciones@nordelta.com", operacion: "INSERT", entidad: "movimiento", referencia: "m21", campo: null, valor_anterior: null, valor_nuevo: null, motivo: null },
+  { id: "a8", ocurrido_en: "2026-09-01T17:30:41", actor: "admin@nordelta.com", operacion: "UPDATE", entidad: "movimiento", referencia: "m22", campo: "categoria", valor_anterior: "compra", valor_nuevo: "ingreso", motivo: "Estaba mal clasificado; no impactaba la cuenta" },
+  { id: "a9", ocurrido_en: "2026-09-01T09:48:12", actor: "operaciones@nordelta.com", operacion: "INSERT", entidad: "movimiento", referencia: "m22", campo: null, valor_anterior: null, valor_nuevo: null, motivo: null },
+];

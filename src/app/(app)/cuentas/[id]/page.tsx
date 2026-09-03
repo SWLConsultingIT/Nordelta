@@ -43,7 +43,9 @@ export default async function CuentaPage({ params }: { params: Promise<{ id: str
         actions={
           <>
             <Link href="/cuentas"><Button>Volver</Button></Link>
-            <Button variant="primary">Exportar Excel</Button>
+            <a href={`/api/export?tipo=cta&id=${id}`} download>
+              <Button variant="primary">Exportar Excel</Button>
+            </a>
           </>
         }
       />

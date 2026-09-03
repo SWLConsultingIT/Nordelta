@@ -47,7 +47,11 @@ export default async function CargaPage({
       <PageHead
         title="Carga diaria"
         sub={`${fmtFechaLarga(fecha)} · ${oficina}`}
-        actions={<Button>Exportar Excel</Button>}
+        actions={
+          <a href={`/api/export?tipo=carga&fecha=${fecha}&oficina=${oficinaId}`} download>
+            <Button>Exportar Excel</Button>
+          </a>
+        }
       />
 
       <Card>

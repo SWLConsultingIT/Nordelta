@@ -32,7 +32,11 @@ export default async function BalancePage() {
       <PageHead
         title="Balance general"
         sub="Saldo por contraparte y por moneda, calculado en vivo"
-        actions={<Button>Exportar Excel</Button>}
+        actions={
+          <a href="/api/export?tipo=balance" download>
+            <Button>Exportar Excel</Button>
+          </a>
+        }
       />
       <Card>
         <TablaBalance filas={filas} />

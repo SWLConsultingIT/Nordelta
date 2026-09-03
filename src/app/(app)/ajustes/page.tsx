@@ -1,17 +1,39 @@
 import type { Metadata } from "next";
 import { PageHead } from "@/components/ui";
-import { Pendiente } from "@/components/shell/Pendiente";
+import { getContrapartes, getTodosLosMovimientos } from "@/lib/data";
+import { construirCtaCte, saldoFinal } from "@/lib/domain/saldos";
+import { FormAjuste, type SaldoContraparte } from "./Form";
 
 export const metadata: Metadata = { title: "Ajustes de cuenta" };
 
-export default function AjustesPage() {
+export default async function AjustesPage() {
+  const [contrapartes, movimientos] = await Promise.all([
+    getContrapartes(),
+    getTodosLosMovimientos(),
+  ]);
+
+  const saldos: SaldoContraparte[] = contrapartes.map((c) => ({
+    id: c.id,
+    nombre: c.nombre,
+    saldo: saldoFinal(construirCtaCte(movimientos.filter((m) => m.contraparte_id === c.id))),
+  }));
+
   return (
     <>
-      <PageHead title="Ajustes de cuenta" sub="Dentro del alcance, sin construir todavía" />
-      <Pendiente
-        titulo="Reemplaza los seis Sheets de cierre"
-        texto="Un ajuste es un movimiento como cualquier otro, con categoría «ajuste de cuenta»: se carga desde la misma grilla y se lleva el saldo del cliente a cero. Queda pendiente definir por qué hoy son seis planillas distintas."
+      <PageHead
+        title="Ajustes de cuenta"
+        sub="Corrección para llevar la cuenta corriente de una contraparte a cero"
       />
+      <FormAjuste saldos={saldos} />
+      <p className="mt-4 text-[12.5px] text-ink-3 max-w-[80ch]">
+        Reemplaza los seis Sheets de cierre. Un ajuste es un movimiento como
+        cualquier otro, con categoría <span className="text-ink-2 font-medium">ajuste de cuenta</span>, así que
+        entra al mismo libro mayor y queda en la auditoría.{" "}
+        <span className="text-ink-2 font-medium">
+          Cuando las cuatro monedas quedan en cero, el cierre se marca solo
+        </span>{" "}
+        — no hay que registrarlo aparte.
+      </p>
     </>
   );
 }

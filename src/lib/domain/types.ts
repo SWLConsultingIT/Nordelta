@@ -93,3 +93,18 @@ export interface Impacto {
 }
 
 export type EstadoGuardado = "guardado" | "sin_guardar" | "guardando" | "error";
+
+/** Entrada del registro de auditoría. En el sistema actual esto no
+ *  existe: nada registra quién cargó, editó o borró. */
+export interface EntradaAuditoria {
+  id: string;
+  ocurrido_en: string; // ISO
+  actor: string;
+  operacion: "INSERT" | "UPDATE" | "DELETE";
+  entidad: string;
+  referencia: string;
+  campo: string | null;
+  valor_anterior: string | null;
+  valor_nuevo: string | null;
+  motivo: string | null;
+}

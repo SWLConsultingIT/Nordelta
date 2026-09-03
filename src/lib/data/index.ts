@@ -39,3 +39,8 @@ export async function getMovimientosDeContraparte(id: number): Promise<Movimient
 export async function getTodosLosMovimientos(): Promise<Movimiento[]> {
   return MOVIMIENTOS;
 }
+
+export async function getAuditoria(): Promise<import("../domain/types").EntradaAuditoria[]> {
+  const { AUDITORIA } = await import("./fixtures");
+  return [...AUDITORIA].sort((a, b) => (a.ocurrido_en < b.ocurrido_en ? 1 : -1));
+}

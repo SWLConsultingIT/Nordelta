@@ -5,8 +5,7 @@ Reemplaza el sistema actual de Google Sheets + Apps Script + BigQuery + n8n.
 
 ## Estado
 
-Primera iteración del front. Corre con datos de muestra hasta que se
-configure Supabase.
+Front completo. Corre con datos de muestra hasta que se configure Supabase.
 
 | Pantalla | Ruta | Estado |
 |---|---|---|
@@ -17,8 +16,9 @@ configure Supabase.
 | Contrapartes | `/cuentas` | Lista |
 | Cuenta corriente | `/cuentas/[id]` | Lista — saldo corrido y cierres |
 | Balance general | `/balance` | Lista |
-| Ajustes de cuenta | `/ajustes` | Pendiente |
-| Auditoría | `/auditoria` | Pendiente |
+| Ajustes de cuenta | `/ajustes` | Lista — calcula el ajuste que cierra la cuenta |
+| Auditoría | `/auditoria` | Lista |
+| Export CSV | `/api/export` | Listo — balance, cuenta corriente y caja diaria |
 
 ## Correr
 
