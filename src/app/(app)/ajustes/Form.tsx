@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Card, CardBar, Cifra, Field, Input, cx } from "@/components/ui";
 import { MONEDAS, type Moneda } from "@/lib/domain/types";
 import { fmtMonto, parseMonto, partirMonto } from "@/lib/format";
+import { registrarAjuste } from "./acciones";
 
 export interface SaldoContraparte {
   id: number;
@@ -14,11 +16,22 @@ export interface SaldoContraparte {
 type Montos = Record<Moneda, string>;
 const VACIO: Montos = { ARS: "", USD: "", EUR: "", BRL: "" };
 
-export function FormAjuste({ saldos }: { saldos: SaldoContraparte[] }) {
+export function FormAjuste({
+  saldos,
+  oficinaId,
+  fecha,
+}: {
+  saldos: SaldoContraparte[];
+  oficinaId: number;
+  fecha: string;
+}) {
+  const router = useRouter();
+  const [enviando, enviar] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const [id, setId] = useState<number | null>(null);
   const [montos, setMontos] = useState<Montos>(VACIO);
   const [concepto, setConcepto] = useState("");
-  const [enviado, setEnviado] = useState(false);
+  const [enviado, setEnviado] = useState<string | null>(null);
 
   const elegida = saldos.find((s) => s.id === id) ?? null;
 
@@ -61,7 +74,8 @@ export function FormAjuste({ saldos }: { saldos: SaldoContraparte[] }) {
                 const v = e.target.value ? Number(e.target.value) : null;
                 setId(v);
                 setMontos(VACIO);
-                setEnviado(false);
+                setEnviado(null);
+                setError(null);
               }}
               className="h-9 rounded-lg bg-surface border border-line px-2.5 text-[13.5px] text-ink shadow-e1 focus:border-brand"
             >
@@ -100,7 +114,7 @@ export function FormAjuste({ saldos }: { saldos: SaldoContraparte[] }) {
               <div className="flex items-center gap-3">
                 <Button
                   size="sm"
-                  onClick={() => { setMontos(paraCerrar); setEnviado(false); }}
+                  onClick={() => { setMontos(paraCerrar); setEnviado(null); setError(null); }}
                   disabled={MONEDAS.every((m) => !elegida.saldo[m])}
                 >
                   Llevar el saldo a cero
@@ -123,7 +137,7 @@ export function FormAjuste({ saldos }: { saldos: SaldoContraparte[] }) {
                           inputMode="decimal"
                           placeholder="0,00"
                           value={montos[m]}
-                          onChange={(e) => { setMontos({ ...montos, [m]: e.target.value }); setEnviado(false); }}
+                          onChange={(e) => { setMontos({ ...montos, [m]: e.target.value }); setEnviado(null); setError(null); }}
                           className={cx(
                             "h-9 rounded-lg border px-2.5 text-[13.5px] font-mono tnum text-right shadow-e1",
                             malo ? "bg-neg-wash border-neg text-neg" : "bg-surface border-line text-ink focus:border-brand",
@@ -148,18 +162,57 @@ export function FormAjuste({ saldos }: { saldos: SaldoContraparte[] }) {
                 />
               </Field>
 
-              <div className="flex items-center gap-3 pt-1">
+              <div className="flex flex-wrap items-center gap-3 pt-1">
                 <Button
                   variant="primary"
-                  disabled={!puedeGuardar}
-                  onClick={() => setEnviado(true)}
+                  disabled={!puedeGuardar || enviando}
+                  onClick={() => {
+                    setError(null);
+                    setEnviado(null);
+                    enviar(async () => {
+                      // Se manda el saldo a cancelar; la acción invierte el
+                      // signo y arma el asiento. La pantalla nunca toca un saldo.
+                      const aCancelar: Partial<Record<Moneda, number>> = {};
+                      for (const m of MONEDAS) {
+                        const v = parseMonto(montos[m]);
+                        if (v) aCancelar[m] = -v;
+                      }
+                      const r = await registrarAjuste({
+                        contraparteId: elegida.id,
+                        oficinaId,
+                        fecha,
+                        concepto,
+                        montos: aCancelar,
+                      });
+                      if (!r.ok) {
+                        setError(r.mensaje);
+                        return;
+                      }
+                      setMontos(VACIO);
+                      setEnviado(
+                        r.datos.patas === 1
+                          ? "Ajuste registrado con 1 partida."
+                          : `Ajuste registrado con ${r.datos.patas} partidas.`,
+                      );
+                      router.refresh();
+                    });
+                  }}
                 >
-                  Registrar ajuste
+                  {enviando ? "Registrando…" : "Registrar ajuste"}
                 </Button>
+
                 {enviado && (
-                  <span className="flex items-center gap-2 text-[13px] text-pos font-medium">
+                  <span role="status" aria-live="polite"
+                        className="flex items-center gap-2 text-[13px] text-pos font-medium">
                     <span className="w-[7px] h-[7px] rounded-full bg-pos" />
-                    Ajuste registrado
+                    {enviado}
+                  </span>
+                )}
+                {error && (
+                  <span role="alert"
+                        className="flex items-center gap-2 text-[13px] text-neg font-medium">
+                    <span className="w-[7px] h-[7px] rounded-full bg-neg" />
+                    {error}
                   </span>
                 )}
               </div>

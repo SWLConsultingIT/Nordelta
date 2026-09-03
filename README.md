@@ -25,9 +25,13 @@ Front completo. Corre con datos de muestra hasta que se configure Supabase.
 ```bash
 npm install
 npm run dev          # http://localhost:3000
-npm run verificar    # reglas de negocio contra el comportamiento de producción
+npm test             # 203 casos, incluida la paridad contra PostgreSQL real
+npm run verificar    # tests + typecheck
 npm run build
 ```
+
+Si `npm install` falla con `EACCES`, el caché global tiene archivos con dueño
+root. Se esquiva sin sudo: `export npm_config_cache="$PWD/.npm-cache"`.
 
 Sin variables de entorno la app usa las fixtures de `src/lib/data/fixtures.ts`.
 Para conectar Supabase, copiá `.env.example` a `.env.local` y completá las claves.
@@ -58,6 +62,15 @@ resuelve su moneda de impacto por separado.
 Eso no es solo prolijidad: **hace imposible el bug 5 del sistema actual**, donde
 una fila que mezcla una pata convertida con una pata en pesos sin convertir
 pierde la segunda del saldo. Ver `npm run verificar`.
+
+## Documentación
+
+| Documento | Qué contiene |
+|---|---|
+| `CONTEXTO.md` | Traspaso completo del proyecto |
+| `docs/LEGACY_BUGS.md` | Los seis defectos del sistema viejo, con su regresión |
+| `docs/OPEN_BUSINESS_DECISIONS.md` | Las catorce decisiones que faltan del negocio |
+| `docs/RECONCILIATION_STRATEGY.md` | Cómo se concilia contra el legacy |
 
 ## Reglas verificadas contra producción
 
