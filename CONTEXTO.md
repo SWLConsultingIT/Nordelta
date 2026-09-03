@@ -232,7 +232,7 @@ independiente**, así que el bug 5 se vuelve estructuralmente imposible.
 
 Otras decisiones:
 - `contrapartes.nombre_norm` es una columna generada con `unique`, lo que hace
-  imposible volver a tener «Bonomi» y «bonomi» como dos clientes distintos.
+  imposible volver a tener «Sanchez» y «sanchez» como dos clientes distintos.
 - `movimientos.orden` da un **desempate estable** al saldo corrido, que es lo que
   arregla el bug 4.
 - **Los saldos y los cierres son vistas, no tablas.** Se calculan al consultar.

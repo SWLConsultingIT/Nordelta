@@ -45,7 +45,7 @@ export default async function BalancePage() {
         Una fila por contraparte, y una sola:{" "}
         <span className="text-ink-2 font-medium">
           la restricción de unicidad de la base hace imposible que vuelvan a existir
-          «Bonomi» y «bonomi» como dos clientes distintos
+          «Sanchez» y «sanchez» como dos clientes distintos
         </span>
         . La fila de totales suma todas las contrapartes.
       </p>

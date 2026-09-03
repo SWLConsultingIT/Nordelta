@@ -41,7 +41,7 @@ create table contrapartes (
   nombre       text not null,
   -- Espejo de `normalizarNombre()` en src/lib/domain/contrapartes.ts.
   -- La unicidad sobre esta columna es lo que hace imposible volver a tener
-  -- «Bonomi», «bonomi» y «BONOMI» como tres clientes distintos.
+  -- «Sanchez», «sanchez» y «SANCHEZ» como tres clientes distintos.
   -- No plega acentos a propósito: «Peña» y «Pena» siguen siendo distintos.
   nombre_norm  text generated always as (
     lower(

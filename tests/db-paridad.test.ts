@@ -168,7 +168,7 @@ describe("v_balance · nunca suma monedas distintas entre sí", () => {
 });
 
 describe("nombre_norm · la base normaliza igual que el dominio", () => {
-  const nombres = ["Bonomi", " Perez  Garcia. ", "GASTOS OFICINA", "José", "Alvarez, J.", "Peña"];
+  const nombres = ["Sanchez", " Perez  Garcia. ", "GASTOS OFICINA", "José", "Alvarez, J.", "Peña"];
   for (const n of nombres) {
     it(`${JSON.stringify(n)}`, async () => {
       const r = await db.query<{ nombre_norm: string }>(

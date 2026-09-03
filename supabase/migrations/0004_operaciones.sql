@@ -19,7 +19,7 @@
 /**
  * Resuelve una contraparte por nombre, creándola si no existe.
  *
- * Compara por `nombre_norm`, así que «Bonomi» y «bonomi» resuelven a la
+ * Compara por `nombre_norm`, así que «Sanchez» y «sanchez» resuelven a la
  * misma fila en lugar de crear un duplicado. El nombre de display que queda
  * guardado es el de la primera carga.
  */
