@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cx } from "../ui";
-import { IcoInicio, IcoGrid, IcoLedger, IcoBars, IcoPeople, IcoScale, IcoShield } from "../ui/icons";
+import { IcoInicio, IcoGrid, IcoBars, IcoPeople, IcoScale, IcoShield } from "../ui/icons";
 
 const GRUPOS = [
   {

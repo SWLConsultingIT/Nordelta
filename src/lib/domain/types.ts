@@ -78,6 +78,10 @@ export interface Movimiento {
   contraparte_id: number | null;
   concepto: string;
   categoria: Categoria;
+  /** Espejo de la columna homónima de la base. La regla de
+   *  `ALLOWED_SECTIONS` se guarda explícita, no se deduce de la posición
+   *  de la fila dentro de una grilla. */
+  afecta_cta_cte?: boolean;
   /** Desempate estable del saldo corrido. Resuelve el bug 4 del
    *  sistema actual, donde el orden entre movimientos del mismo día
    *  era arbitrario y el cierre de cuenta podía variar entre corridas. */

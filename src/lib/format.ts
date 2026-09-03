@@ -1,22 +1,30 @@
+/**
+ * Formato de presentación.
+ *
+ * Las primitivas numéricas viven en `domain/dinero.ts` y se reexportan desde
+ * acá para que exista **una sola** implementación de redondeo y de parseo.
+ * Dos implementaciones del mismo cálculo es exactamente cómo el front y la
+ * base terminan mostrando números distintos.
+ */
 import type { Moneda } from "./domain/types";
+import { formatear, partir, parsearNumero, DECIMALES_SALDO } from "./domain/dinero";
 
+export { parsearNumero as parseMonto, redondear, esCero } from "./domain/dinero";
+
+/** Decimales con los que se muestra cada moneda. */
 const DECIMALES: Record<Moneda, number> = { ARS: 2, USD: 2, EUR: 2, BRL: 2 };
 
 export function fmtMonto(n: number, moneda?: Moneda): string {
-  const d = moneda ? DECIMALES[moneda] : 2;
-  return n.toLocaleString("es-AR", { minimumFractionDigits: d, maximumFractionDigits: d });
+  return formatear(n, moneda ? DECIMALES[moneda] : DECIMALES_SALDO);
 }
 
-/** Separa la parte entera de los decimales para poder atenuarlos.
- *  Es el detalle que hace que los números se lean como de banco. */
 export function partirMonto(n: number, moneda?: Moneda): { entero: string; decimal: string } {
-  const s = fmtMonto(n, moneda);
-  const i = s.lastIndexOf(",");
-  return i < 0 ? { entero: s, decimal: "" } : { entero: s.slice(0, i), decimal: s.slice(i) };
+  return partir(n, moneda ? DECIMALES[moneda] : DECIMALES_SALDO);
 }
 
-export function fmtPct(n: number): string {
-  return (n * 100).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " %";
+/** Recibe la fracción (0,02) y muestra el porcentaje (2,00 %). */
+export function fmtPct(fraccion: number): string {
+  return formatear(fraccion * 100, 2) + " %";
 }
 
 export function fmtFecha(iso: string): string {
@@ -35,11 +43,9 @@ export function hoyISO(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** Acepta lo que el operador tipea: coma o punto decimal, negativos.
- *  Devuelve null si no es un número — la celda lo marca en rojo. */
-export function parseMonto(v: string): number | null {
-  const s = v.trim();
-  if (s === "") return 0;
-  if (!/^-?\d+(?:[.,]\d+)?$/.test(s)) return null;
-  return parseFloat(s.replace(",", "."));
+/** ¿Es una fecha ISO válida y real? Rechaza 2026-02-31. */
+export function esFechaISOValida(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(s + "T12:00:00");
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
 }

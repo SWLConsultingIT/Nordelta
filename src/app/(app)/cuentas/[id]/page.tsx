@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Button, Card, PageHead } from "@/components/ui";
+import { Button, PageHead } from "@/components/ui";
 import { getContraparte, getMovimientosDeContraparte, getOficinas } from "@/lib/data";
 import { construirCtaCte } from "@/lib/domain/saldos";
 import { LibroCtaCte, type FilaLibro } from "./Libro";
