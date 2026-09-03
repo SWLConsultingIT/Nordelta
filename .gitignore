@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Caché local de npm (permisos de ~/.npm)
 .npm-cache/
+
+# Reportes de conciliación (pueden contener datos reales)
+reconciliation/

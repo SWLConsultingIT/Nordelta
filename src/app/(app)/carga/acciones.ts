@@ -5,6 +5,7 @@ import { exigirSesion } from "@/lib/auth";
 import { crearMovimientos, type MovimientoNuevo } from "@/lib/data";
 import { aResultadoError, type Resultado } from "@/lib/domain/errors";
 import { CATEGORIAS, MEDIOS_PAGO, MONEDAS } from "@/lib/domain/types";
+import { conObservabilidad } from "@/lib/observabilidad";
 import type { Categoria, MedioPago, Moneda } from "@/lib/domain/types";
 
 /** Forma cruda que envía la grilla. Todo llega como texto: es lo que el
@@ -37,9 +38,27 @@ export async function guardarFilas(
   filas: FilaParaGuardar[],
 ): Promise<Resultado<{ creados: number }>> {
   try {
-    await exigirSesion();
+    const sesion = await exigirSesion();
 
     if (filas.length === 0) return { ok: true, datos: { creados: 0 } };
+
+    return await conObservabilidad(
+      "carga.guardar",
+      { usuario: sesion.userId, contexto: { oficina_id: oficinaId, filas: filas.length } },
+      async () => await guardar(fecha, oficinaId, filas),
+    );
+  } catch (e) {
+    return aResultadoError(e);
+  }
+}
+
+/** El guardado en sí, separado para que la observabilidad lo envuelva. */
+async function guardar(
+  fecha: string,
+  oficinaId: number,
+  filas: FilaParaGuardar[],
+): Promise<Resultado<{ creados: number }>> {
+  {
 
     const entradas: MovimientoNuevo[] = filas.map((f) => {
       // Se revalida el enum del lado del servidor: el cliente pudo mandar
@@ -78,7 +97,5 @@ export async function guardarFilas(
     revalidatePath("/inicio");
 
     return { ok: true, datos: { creados: creados.length } };
-  } catch (e) {
-    return aResultadoError(e);
   }
 }

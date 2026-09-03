@@ -10,7 +10,9 @@
     "verificar": "vitest run && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:cov": "vitest run --coverage"
+    "test:cov": "vitest run --coverage",
+    "test:supabase": "vitest run --config vitest.supabase.config.mts",
+    "migrar:legacy": "tsx scripts/migrar-legacy.mts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

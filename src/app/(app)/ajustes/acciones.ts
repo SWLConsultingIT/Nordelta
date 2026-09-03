@@ -6,6 +6,7 @@ import { ajustarCuentaACero, getContraparte } from "@/lib/data";
 import { aResultadoError, ErrorValidacion, type Resultado } from "@/lib/domain/errors";
 import { MONEDAS, type Moneda } from "@/lib/domain/types";
 import { esFechaISOValida } from "@/lib/format";
+import { registrar, nuevaCorrelacion } from "@/lib/observabilidad";
 
 /**
  * Registra un ajuste que lleva una cuenta corriente a cero.
@@ -24,8 +25,9 @@ export async function registrarAjuste(entrada: {
   concepto: string;
   montos: Partial<Record<Moneda, number>>;
 }): Promise<Resultado<{ movimientoId: string | null; patas: number }>> {
+  const correlacion = nuevaCorrelacion();
   try {
-    await exigirSesion();
+    const sesion = await exigirSesion();
 
     if (!esFechaISOValida(entrada.fecha)) {
       throw new ErrorValidacion("La fecha no es válida", "fecha");
@@ -60,11 +62,27 @@ export async function registrarAjuste(entrada: {
     revalidatePath("/balance");
     revalidatePath(`/cuentas/${entrada.contraparteId}`);
 
+    registrar("info", "ajuste.registrar", {
+      correlacion,
+      usuario: sesion.userId,
+      contexto: {
+        contraparte_id: entrada.contraparteId,
+        oficina_id: entrada.oficinaId,
+        movimiento_id: mov?.id ?? null,
+        patas: Object.keys(limpios).length,
+      },
+    });
+
     return {
       ok: true,
       datos: { movimientoId: mov?.id ?? null, patas: Object.keys(limpios).length },
     };
   } catch (e) {
+    registrar("error", "ajuste.registrar", {
+      correlacion,
+      contexto: { contraparte_id: entrada.contraparteId, oficina_id: entrada.oficinaId },
+      error: e,
+    });
     return aResultadoError(e);
   }
 }

@@ -1,0 +1,20 @@
+Fecha;Cliente/Proveedor;Detalle;Tipo de Movimiento;PESOS;TC;DOLARES;EUROS;REALES;Pago Facil;Comisión;TC Transferencia;Transferencia Pesos;Transferencias en Dolares;Transferencias EUROS;Transferencia REALES
+03/09/2026;Comercial del Plata SA;Ingreso en efectivo;Ingresos;2.400.000;;;;;;;;;;;
+03/09/2026;Distribuidora Andina SRL;Transferencia recibida;Ingresos;;;;;;;0,02;;;3.500;;
+03/09/2026;Comercial del Plata SA;Cobro pago facil;Ingresos;;;;;;890.000;;;;;;
+03/09/2026;Gastos Oficina;Alquiler septiembre;Pagos a proveedores;-1.200.000;;;;;;;;;;;
+04/09/2026;Metalurgica del Sur SA;Prestamo en pesos;Ingresos;4.455.000;1.485;;;;;;;;;;
+04/09/2026;Ibarra y Asociados;Operacion mixta;Ingresos;100.000;;;;;;0,02;1.485;50.000;;;
+05/09/2026;Metalurgica del Sur SA;Mixta con dolar nominal;Ingresos;100.000;1.485;100.000;;;;;;;;;
+05/09/2026;COMERCIAL DEL PLATA SA;Variante en mayusculas;Ingresos;15.000;;;;;;;;;;;
+05/09/2026;Distribuidora Andina SRL;Compra de divisa;Compras;1.480.000;1.480;;;;;;;;;;
+06/09/2026;Ibarra y Asociados;Gasto de logistica;Egresos;-45.000;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+no-es-fecha;Nova Textil SA;Fecha imposible;Ingresos;100.000;;;;;;;;;;;
+31/02/2026;Nova Textil SA;Fecha inexistente;Ingresos;100.000;;;;;;;;;;;
+06/09/2026;Nova Textil SA;Monto no numerico;Ingresos;s/d;;;;;;;;;;;
+06/09/2026;Nova Textil SA;Categoria desconocida;Otra cosa;100.000;;;;;;;;;;;
+06/09/2026;;Sin contraparte;Ingresos;100.000;;;;;;;;;;;
+07/09/2026;Nova Textil SA;Full pago multi moneda;Full Pagos;;;500;220;310;;;;;;;
+07/09/2026;Puerto Norte SRL;Cheque a cobrar;Ingresos;1.750.000;;;;;;;;;;;
+;;;;;;;;;;;;;;;

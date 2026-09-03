@@ -23,6 +23,7 @@ import {
 import { fmtMonto, parseMonto } from "@/lib/format";
 import { guardarFilas, type FilaParaGuardar } from "@/app/(app)/carga/acciones";
 import { Button, cx } from "@/components/ui";
+import { medir, medirAsync } from "@/lib/observabilidad/medicion";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -174,7 +175,9 @@ export function CargaGrid({
     (e: React.ClipboardEvent) => {
       const texto = e.clipboardData.getData("text/plain");
       if (!texto) return;
-      const bloque = separarBloquePegado(texto);
+      const bloque = medir("pegado", () => separarBloquePegado(texto), {
+        filas: texto.split("\n").length,
+      });
       // Una celda sola: comportamiento nativo del editor.
       if (bloque.length === 1 && bloque[0].length === 1) return;
       e.preventDefault();
@@ -447,7 +450,11 @@ export function CargaGrid({
         comision_pct: (parseMonto(f.comision) || 0) / 100 || null,
       }));
 
-      const r = await guardarFilas(fecha, oficinaId, carga);
+      const r = await medirAsync(
+        "guardado",
+        () => guardarFilas(fecha, oficinaId, carga),
+        { filas: carga.length },
+      );
       if (!r.ok) {
         setAviso({ tono: "mal", texto: r.mensaje });
         return;
