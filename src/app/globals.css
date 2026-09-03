@@ -1,26 +1,131 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─────────────────────────────────────────────────────────────
+   Nordelta Operations Platform — azul y blanco
+   Neutrales con sesgo azul; el azul se reserva para la acción.
+   ───────────────────────────────────────────────────────────── */
+@theme {
+  --color-ground:    #F4F7FC;
+  --color-surface:   #FFFFFF;
+  --color-raised:    #F8FAFE;
+  --color-navy:      #0A1E3C;
+  --color-navy-2:    #102A4E;
+  --color-navy-3:    #1B3B66;
+
+  --color-brand:     #1E5FD1;
+  --color-brand-hi:  #2E7BF6;
+  --color-brand-wash:#E9F1FE;
+  --color-brand-line:#C3D8F8;
+
+  --color-line:      #E1E8F2;
+  --color-line-soft: #EDF1F8;
+
+  --color-ink:       #0C1829;
+  --color-ink-2:     #42536A;
+  --color-ink-3:     #75879F;
+  --color-ink-4:     #9EADC0;
+
+  --color-on-navy:   #F2F7FF;
+  --color-on-navy-2: #93AAC9;
+  --color-on-navy-3: #5D799F;
+
+  --color-pos:       #0D7A5A;
+  --color-pos-wash:  #E4F4EE;
+  --color-neg:       #B3261E;
+  --color-neg-wash:  #FBEBEA;
+  --color-warn:      #A96A0B;
+  --color-warn-wash: #FCF2E2;
+
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  --shadow-e1: 0 1px 2px rgba(12,24,41,.05);
+  --shadow-e2: 0 1px 2px rgba(12,24,41,.05), 0 6px 18px -6px rgba(12,24,41,.10);
+  --shadow-e3: 0 2px 4px rgba(12,24,41,.06), 0 14px 34px -10px rgba(12,24,41,.16);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* El mismo set de tokens, redefinido para tema oscuro.
+   Se conserva la identidad azul: el blanco pasa a navy profundo. */
+@layer base {
+  .dark {
+    --color-ground:    #070E18;
+    --color-surface:   #0E1B2B;
+    --color-raised:    #132234;
+    --color-navy:      #060D18;
+    --color-navy-2:    #0C1826;
+    --color-navy-3:    #16283D;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --color-brand:     #4E92FF;
+    --color-brand-hi:  #78ADFF;
+    --color-brand-wash:#12253F;
+    --color-brand-line:#1E3A5E;
+
+    --color-line:      #1E2E42;
+    --color-line-soft: #172538;
+
+    --color-ink:       #E8EFF8;
+    --color-ink-2:     #A9BACE;
+    --color-ink-3:     #74879E;
+    --color-ink-4:     #566B84;
+
+    --color-on-navy:   #E8EFF8;
+    --color-on-navy-2: #8AA2C0;
+    --color-on-navy-3: #566F8F;
+
+    --color-pos:       #45B98F;
+    --color-pos-wash:  #0F2A22;
+    --color-neg:       #F08B85;
+    --color-neg-wash:  #33191A;
+    --color-warn:      #DCA34A;
+    --color-warn-wash: #2A2010;
+
+    --shadow-e1: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-e2: 0 1px 2px rgba(0,0,0,.4), 0 6px 18px -6px rgba(0,0,0,.5);
+    --shadow-e3: 0 2px 4px rgba(0,0,0,.4), 0 14px 34px -10px rgba(0,0,0,.6);
+  }
+
+  html { color-scheme: light dark; }
+  body {
+    background: var(--color-ground);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Los números de una app financiera se alinean siempre. */
+  .tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+  ::selection { background: var(--color-brand-wash); color: var(--color-brand); }
+
+  *:focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 3px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Etiqueta monoespaciada en versalitas: el registro "contable"
+   que usamos para encabezados de columna y micro-rótulos. */
+@utility label-mono {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
 }
+
+/* ── AG Grid ──────────────────────────────────────────────────
+   Celda con un valor que no es número: el operador lo ve al
+   instante y la base nunca lo va a aceptar. */
+.ag-nordelta .celda-mala {
+  background: var(--color-neg-wash) !important;
+  color: var(--color-neg) !important;
+  box-shadow: inset 0 -2px 0 var(--color-neg);
+}
+.ag-nordelta .ag-header-cell-text {
+  font-family: var(--font-mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.ag-nordelta { --ag-active-color: var(--color-brand); }
