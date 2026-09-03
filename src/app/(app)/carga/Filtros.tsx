@@ -24,18 +24,23 @@ export function FiltrosCarga({
 
   return (
     <>
-      <Segmented
-        label="Oficina"
-        value={oficinaId}
-        onChange={(v) => ir({ oficina: String(v) })}
-        options={oficinas.map((o) => ({ value: o.id, label: o.nombre.replace("Oficina ", "") }))}
-      />
-      <div className="ml-auto">
+      <label className="flex items-center gap-2">
+        <span className="label-mono">Día</span>
         <Input
           type="date"
           aria-label="Día"
           value={fecha}
-          onChange={(e) => ir({ fecha: e.target.value })}
+          onChange={(e) => e.target.value && ir({ fecha: e.target.value })}
+        />
+      </label>
+
+      <div className="ml-auto flex items-center gap-2">
+        <span className="label-mono">Oficina</span>
+        <Segmented
+          label="Oficina"
+          value={oficinaId}
+          onChange={(v) => ir({ oficina: String(v) })}
+          options={oficinas.map((o) => ({ value: o.id, label: o.nombre }))}
         />
       </div>
     </>

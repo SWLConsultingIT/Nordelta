@@ -5,7 +5,15 @@ Reemplaza el sistema actual de Google Sheets + Apps Script + BigQuery + n8n.
 
 ## Estado
 
-Front completo. Corre con datos de muestra hasta que se configure Supabase.
+**MVP navegable.** Corre de punta a punta con datos de demostración: no hacen
+falta variables de entorno, ni Supabase, ni conexión externa.
+
+```bash
+npm install
+npm run dev     # http://localhost:3000
+```
+
+El recorrido recomendado está en `docs/MVP_DEMO_SCRIPT.md`.
 
 | Pantalla | Ruta | Estado |
 |---|---|---|
@@ -25,7 +33,7 @@ Front completo. Corre con datos de muestra hasta que se configure Supabase.
 ```bash
 npm install
 npm run dev          # http://localhost:3000
-npm test             # 246 casos, incluida la paridad contra PostgreSQL real
+npm test             # 264 casos, incluida la paridad contra PostgreSQL real
 npm run test:supabase  # 54 casos contra un Supabase real (necesita credenciales)
 npm run verificar    # tests + typecheck
 npm run build
@@ -80,6 +88,7 @@ pierde la segunda del saldo. Ver `npm run verificar`.
 | `docs/CARGA_USABILITY_TEST.md` | Protocolo Excel contra web |
 | `docs/PARALLEL_RUN.md` | Runbook de la marcha en paralelo |
 | `docs/PRODUCTION_READINESS.md` | Checklist con evidencia |
+| `docs/MVP_DEMO_SCRIPT.md` | Recorrido de demostración de 8 a 10 minutos |
 
 ## Reglas verificadas contra producción
 

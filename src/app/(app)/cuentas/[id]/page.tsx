@@ -2,23 +2,40 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button, PageHead } from "@/components/ui";
-import { getContraparte, getMovimientosDeContraparte, getOficinas } from "@/lib/data";
+import {
+  getContraparte, getMovimientosDeContraparte, getOficinas,
+} from "@/lib/data";
 import { construirCtaCte } from "@/lib/domain/saldos";
-import { LibroCtaCte, type FilaLibro } from "./Libro";
+import { calcularImpacto } from "@/lib/domain/fx";
+import { ErrorNoEncontrado } from "@/lib/domain/errors";
+import { Libro, type FilaLibro } from "./Libro";
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const c = await getContraparte(Number((await params).id));
-  return { title: c?.nombre ?? "Cuenta corriente" };
+export async function generateMetadata(
+  { params }: { params: Promise<{ id: string }> },
+): Promise<Metadata> {
+  try {
+    const c = await getContraparte(Number((await params).id));
+    return { title: c.nombre };
+  } catch {
+    return { title: "Cuenta" };
+  }
 }
 
 export default async function CuentaPage({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const [contraparte, movimientos, oficinas] = await Promise.all([
-    getContraparte(id),
+
+  let contraparte;
+  try {
+    contraparte = await getContraparte(id);
+  } catch (e) {
+    if (e instanceof ErrorNoEncontrado) notFound();
+    throw e;
+  }
+
+  const [movimientos, oficinas] = await Promise.all([
     getMovimientosDeContraparte(id),
     getOficinas(),
   ]);
-  if (!contraparte) notFound();
 
   const ctaCte = construirCtaCte(movimientos);
   const oficina = (oid: number) => oficinas.find((o) => o.id === oid)?.nombre ?? "—";
@@ -29,33 +46,38 @@ export default async function CuentaPage({ params }: { params: Promise<{ id: str
     oficina: oficina(f.movimiento.oficina_id),
     concepto: f.movimiento.concepto,
     categoria: f.movimiento.categoria,
-    convirtio: f.movimiento.partidas.some((p) => p.tipo_cambio !== null && p.tipo_cambio > 0),
     delta: f.delta,
     saldo: f.saldo,
     esCierre: f.esCierre,
+    partidas: f.movimiento.partidas.map((p) => {
+      const i = calcularImpacto(p);
+      return {
+        medio_pago: p.medio_pago,
+        moneda_nominal: p.moneda_nominal,
+        monto_nominal: p.monto_nominal,
+        tipo_cambio: p.tipo_cambio,
+        comision_pct: p.comision_pct,
+        moneda_impacto: i.moneda,
+        monto_impacto: i.monto,
+      };
+    }),
   }));
 
   return (
     <>
       <PageHead
         title={contraparte.nombre}
-        sub="Cuenta corriente · saldo corrido y cierres detectados automáticamente"
+        sub="Cuenta corriente"
         actions={
           <>
-            <Link href="/cuentas"><Button>Volver</Button></Link>
+            <Link href="/cuentas"><Button>Volver a cuentas</Button></Link>
             <a href={`/api/export?tipo=cta&id=${id}`} download>
-              <Button variant="primary">Exportar Excel</Button>
+              <Button variant="primary">Exportar CSV</Button>
             </a>
           </>
         }
       />
-      <LibroCtaCte filas={filas} />
-      <p className="mt-4 text-[12.5px] text-ink-3 max-w-[80ch]">
-        El saldo corrido lo calcula la base con una función de ventana, así que{" "}
-        <span className="text-ink-2 font-medium">está siempre al día y no hay ningún botón que tarde minutos</span>
-        . El cierre se marca cuando las cuatro monedas quedan en cero al mismo
-        tiempo — es la misma regla que corre hoy en producción.
-      </p>
+      <Libro filas={filas} contraparte={contraparte.nombre} />
     </>
   );
 }

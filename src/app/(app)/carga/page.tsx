@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { CargaGrid, type FilaCarga } from "@/components/grid/CargaGrid";
-import { Card, CardBar, CardFoot, PageHead, Button } from "@/components/ui";
+import { Button, Card, CardBar, CardFoot, PageHead } from "@/components/ui";
 import { getContrapartes, getMovimientosDelDia, getOficinas } from "@/lib/data";
-import { fmtFechaLarga, hoyISO } from "@/lib/format";
+import { HOY_DEMO } from "@/lib/data/dataset";
+import { esFechaISOValida, fmtFechaLarga } from "@/lib/format";
 import { FiltrosCarga } from "./Filtros";
 
-export const metadata: Metadata = { title: "Carga diaria" };
+export const metadata: Metadata = { title: "Carga de movimientos" };
 
 export default async function CargaPage({
   searchParams,
@@ -13,8 +14,8 @@ export default async function CargaPage({
   searchParams: Promise<{ fecha?: string; oficina?: string }>;
 }) {
   const sp = await searchParams;
-  const fecha = sp.fecha ?? hoyISO();
-  const oficinaId = Number(sp.oficina ?? 1);
+  const fecha = sp.fecha && esFechaISOValida(sp.fecha) ? sp.fecha : HOY_DEMO;
+  const oficinaId = Number(sp.oficina ?? 1) || 1;
 
   const [oficinas, contrapartes, movimientos] = await Promise.all([
     getOficinas(),
@@ -22,8 +23,7 @@ export default async function CargaPage({
     getMovimientosDelDia(fecha, oficinaId),
   ]);
 
-  const nombre = (id: number | null) =>
-    contrapartes.find((c) => c.id === id)?.nombre ?? "";
+  const nombre = (id: number | null) => contrapartes.find((c) => c.id === id)?.nombre ?? "";
 
   /** Una fila de grilla por partida: es el modelo real de la base. */
   const filas: FilaCarga[] = movimientos.flatMap((m) =>
@@ -45,11 +45,11 @@ export default async function CargaPage({
   return (
     <>
       <PageHead
-        title="Carga diaria"
+        title="Carga de movimientos"
         sub={`${fmtFechaLarga(fecha)} · ${oficina}`}
         actions={
           <a href={`/api/export?tipo=carga&fecha=${fecha}&oficina=${oficinaId}`} download>
-            <Button>Exportar Excel</Button>
+            <Button>Exportar CSV</Button>
           </a>
         }
       />
@@ -58,25 +58,28 @@ export default async function CargaPage({
         <CardBar>
           <FiltrosCarga oficinas={oficinas} fecha={fecha} oficinaId={oficinaId} />
         </CardBar>
+
         <CargaGrid
           filasIniciales={filas}
           contrapartes={contrapartes}
           fecha={fecha}
           oficinaId={oficinaId}
         />
+
         <CardFoot>
           <span><Kbd>Tab</Kbd> celda</span>
           <span><Kbd>Enter</Kbd> fila</span>
           <span><Kbd>Supr</Kbd> vaciar</span>
           <span><Kbd>⌘Z</Kbd> deshacer</span>
-          <span>Pegá un bloque desde Excel sobre cualquier celda</span>
+          <span className="text-brand font-medium">
+            Podés pegar filas directamente desde Excel
+          </span>
         </CardFoot>
       </Card>
 
-      <p className="mt-4 text-[12.5px] text-ink-3 max-w-[80ch]">
-        Una fila por partida: un solo monto con su moneda y su medio de pago, en
-        lugar de las dieciséis columnas de la planilla. Un movimiento que combina
-        efectivo y transferencia son dos filas —{" "}
+      <p className="mt-4 text-[12.5px] text-ink-3 max-w-[82ch]">
+        Una fila es una partida: un solo monto con su moneda y su medio de pago.
+        Un movimiento que combina efectivo y transferencia son dos filas —{" "}
         <span className="text-ink-2 font-medium">
           y por eso ninguna pata puede perderse cuando la otra tiene tipo de cambio
         </span>
@@ -93,3 +96,5 @@ function Kbd({ children }: { children: React.ReactNode }) {
     </kbd>
   );
 }
+
+export const dynamic = "force-dynamic";

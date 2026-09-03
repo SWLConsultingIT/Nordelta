@@ -1,53 +1,35 @@
 import type { Metadata } from "next";
-import { PageHead, Button, Card } from "@/components/ui";
-import { getContrapartes, getTodosLosMovimientos } from "@/lib/data";
-import { construirCtaCte, indiceUltimoCierre, saldoFinal } from "@/lib/domain/saldos";
-import { TablaBalance, type FilaBalance } from "./TablaBalance";
+import { Button, PageHead } from "@/components/ui";
+import { getContrapartesConSaldo } from "@/lib/data";
+import { TablaBalance } from "./TablaBalance";
 
-export const metadata: Metadata = { title: "Balance general" };
+export const metadata: Metadata = { title: "Balance" };
 
 export default async function BalancePage() {
-  const [contrapartes, movimientos] = await Promise.all([
-    getContrapartes(),
-    getTodosLosMovimientos(),
-  ]);
-
-  const filas: FilaBalance[] = contrapartes.map((c) => {
-    const ctaCte = construirCtaCte(movimientos.filter((m) => m.contraparte_id === c.id));
-    const saldo = saldoFinal(ctaCte);
-    const iCierre = indiceUltimoCierre(ctaCte);
-    return {
-      id: c.id,
-      nombre: c.nombre,
-      ars: saldo.ARS,
-      usd: saldo.USD,
-      eur: saldo.EUR,
-      brl: saldo.BRL,
-      ultimoCierre: iCierre >= 0 ? ctaCte[iCierre].movimiento.fecha : null,
-    };
-  });
-
+  const cuentas = await getContrapartesConSaldo();
   return (
     <>
       <PageHead
-        title="Balance general"
-        sub="Saldo por contraparte y por moneda, calculado en vivo"
+        title="Balance"
+        sub="Saldo de cada contraparte, calculado en vivo"
         actions={
           <a href="/api/export?tipo=balance" download>
-            <Button>Exportar Excel</Button>
+            <Button>Exportar CSV</Button>
           </a>
         }
       />
-      <Card>
-        <TablaBalance filas={filas} />
-      </Card>
+      <TablaBalance
+        filas={cuentas.map((c) => ({
+          id: c.id, nombre: c.nombre, saldo: c.saldo, ultimoCierre: c.ultimoCierre,
+        }))}
+      />
       <p className="mt-4 text-[12.5px] text-ink-3 max-w-[80ch]">
-        Una fila por contraparte, y una sola:{" "}
+        Una fila por contraparte, y una sola: la restricción de unicidad de la
+        base hace imposible que la misma contraparte aparezca dos veces por
+        estar escrita distinto.{" "}
         <span className="text-ink-2 font-medium">
-          la restricción de unicidad de la base hace imposible que vuelvan a existir
-          «Sanchez» y «sanchez» como dos clientes distintos
+          Los totales van por moneda y nunca se suman entre sí.
         </span>
-        . La fila de totales suma todas las contrapartes.
       </p>
     </>
   );

@@ -1,4 +1,6 @@
 import type { ReactNode, ButtonHTMLAttributes, InputHTMLAttributes } from "react";
+import type { Moneda } from "@/lib/domain/types";
+import { SIMBOLO, partirMonto } from "@/lib/format";
 
 export function cx(...v: (string | false | null | undefined)[]) {
   return v.filter(Boolean).join(" ");
@@ -199,6 +201,119 @@ export function PageHead({
         {sub && <p className="text-[13px] text-ink-3 mt-1 m-0">{sub}</p>}
       </div>
       {actions && <div className="ml-auto flex flex-wrap gap-2">{actions}</div>}
+    </div>
+  );
+}
+
+/* ── Monto con símbolo de moneda ───────────────────────────── */
+// Se usa en toda la aplicación para que un importe se vea siempre igual:
+// símbolo, miles con punto, decimales con coma y atenuados.
+
+export function Monto({
+  valor,
+  moneda,
+  className,
+  conSigno,
+  tamano = "normal",
+}: {
+  valor: number;
+  moneda: Moneda;
+  className?: string;
+  /** Muestra el signo + en los positivos. Útil en una columna de impacto. */
+  conSigno?: boolean;
+  tamano?: "normal" | "grande";
+}) {
+  const { entero, decimal } = partirMonto(Math.abs(valor), moneda);
+  const signo = valor < 0 ? "−" : conSigno && valor > 0 ? "+" : "";
+  return (
+    <span className={cx("font-mono tnum whitespace-nowrap", className)}>
+      <span className={cx("text-ink-3", tamano === "grande" ? "mr-1.5 text-[0.62em]" : "mr-1 text-[0.78em]")}>
+        {signo}{SIMBOLO[moneda]}
+      </span>
+      {entero}
+      <span className="opacity-45 font-medium">{decimal}</span>
+    </span>
+  );
+}
+
+/** Guion tenue para un valor que no existe, en lugar de un 0,00 que confunde. */
+export function SinValor() {
+  return <span className="text-ink-4 font-mono">—</span>;
+}
+
+/* ── Estados vacíos ────────────────────────────────────────── */
+
+export function Vacio({
+  titulo,
+  texto,
+  accion,
+}: {
+  titulo: string;
+  texto?: string;
+  accion?: ReactNode;
+}) {
+  return (
+    <div className="px-6 py-14 text-center">
+      <p className="text-[14.5px] font-semibold text-ink">{titulo}</p>
+      {texto && <p className="mt-1.5 mx-auto max-w-[46ch] text-[13px] text-ink-3">{texto}</p>}
+      {accion && <div className="mt-4 flex justify-center">{accion}</div>}
+    </div>
+  );
+}
+
+/* ── Panel lateral ─────────────────────────────────────────── */
+
+export function Panel({
+  abierto,
+  onCerrar,
+  titulo,
+  subtitulo,
+  pie,
+  children,
+}: {
+  abierto: boolean;
+  onCerrar: () => void;
+  titulo: string;
+  subtitulo?: string;
+  pie?: ReactNode;
+  children: ReactNode;
+}) {
+  if (!abierto) return null;
+  return (
+    <div className="fixed inset-0 z-40 flex justify-end" role="dialog" aria-modal="true" aria-label={titulo}>
+      <button
+        aria-label="Cerrar"
+        onClick={onCerrar}
+        className="absolute inset-0 bg-navy/25 backdrop-blur-[1px] cursor-default"
+      />
+      <div className="relative h-full w-full max-w-[520px] bg-surface border-l border-line shadow-e3 flex flex-col">
+        <div className="flex items-start gap-3 px-5 py-4 border-b border-line">
+          <div className="min-w-0">
+            <h2 className="text-[16px] font-semibold tracking-[-0.014em] truncate">{titulo}</h2>
+            {subtitulo && <p className="text-[12.5px] text-ink-3 mt-0.5">{subtitulo}</p>}
+          </div>
+          <button
+            onClick={onCerrar}
+            aria-label="Cerrar"
+            className="ml-auto -mr-1 -mt-1 w-8 h-8 grid place-items-center rounded-lg text-ink-3
+                       hover:bg-raised hover:text-ink text-[18px] leading-none"
+          >
+            ×
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto">{children}</div>
+        {pie && <div className="px-5 py-3.5 border-t border-line bg-raised flex flex-wrap gap-2">{pie}</div>}
+      </div>
+    </div>
+  );
+}
+
+/** Par etiqueta/valor, para los detalles. */
+export function Dato({ etiqueta, children }: { etiqueta: string; children: ReactNode }) {
+  return (
+    <div className="flex items-baseline gap-3 py-2 border-b border-line-soft last:border-0">
+      <span className="label-mono w-[124px] flex-none">{etiqueta}</span>
+      <span className="text-[13.5px] text-ink min-w-0">{children}</span>
     </div>
   );
 }

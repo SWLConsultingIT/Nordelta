@@ -41,8 +41,8 @@ El canal es un grupo de WhatsApp.
 | Preguntas abiertas | **21**, tres de ellas bloquean el esquema definitivo |
 | Bugs encontrados en producción | **5**, tres afectan saldos hoy |
 | Esquema de Supabase | **Escrito, sin aplicar** (el conector no está autorizado) |
-| Front | **Completo y corriendo.** 9 pantallas + export CSV |
-| Datos | Fixtures. La costura a Supabase es un solo archivo |
+| Front | **MVP navegable.** 9 pantallas conectadas + export CSV |
+| Datos | Dataset de demostración determinístico: 36 contrapartes, 312 movimientos, 391 partidas. La costura a Supabase es un solo archivo |
 | Repositorio | `https://github.com/SWLConsultingIT/Nordelta.git` — remoto configurado, **sin pushear** |
 
 ---

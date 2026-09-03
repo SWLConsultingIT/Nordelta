@@ -111,4 +111,6 @@ export interface EntradaAuditoria {
   valor_anterior: string | null;
   valor_nuevo: string | null;
   motivo: string | null;
+  /** Texto legible de qué pasó, para no mostrarle JSON al usuario. */
+  descripcion?: string;
 }

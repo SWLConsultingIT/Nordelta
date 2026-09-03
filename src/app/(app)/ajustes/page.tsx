@@ -1,23 +1,14 @@
 import type { Metadata } from "next";
 import { PageHead } from "@/components/ui";
-import { getContrapartes, getTodosLosMovimientos } from "@/lib/data";
-import { hoyISO } from "@/lib/format";
-import { construirCtaCte, saldoFinal } from "@/lib/domain/saldos";
-import { FormAjuste, type SaldoContraparte } from "./Form";
+import { esDemo, getContrapartesConSaldo, getOficinas } from "@/lib/data";
+import { HOY_DEMO } from "@/lib/data/dataset";
+import { FormAjuste } from "./Form";
+import { ReiniciarDemo } from "./ReiniciarDemo";
 
 export const metadata: Metadata = { title: "Ajustes de cuenta" };
 
 export default async function AjustesPage() {
-  const [contrapartes, movimientos] = await Promise.all([
-    getContrapartes(),
-    getTodosLosMovimientos(),
-  ]);
-
-  const saldos: SaldoContraparte[] = contrapartes.map((c) => ({
-    id: c.id,
-    nombre: c.nombre,
-    saldo: saldoFinal(construirCtaCte(movimientos.filter((m) => m.contraparte_id === c.id))),
-  }));
+  const [cuentas, oficinas] = await Promise.all([getContrapartesConSaldo(), getOficinas()]);
 
   return (
     <>
@@ -25,16 +16,25 @@ export default async function AjustesPage() {
         title="Ajustes de cuenta"
         sub="Corrección para llevar la cuenta corriente de una contraparte a cero"
       />
-      <FormAjuste saldos={saldos} oficinaId={1} fecha={hoyISO()} />
-      <p className="mt-4 text-[12.5px] text-ink-3 max-w-[80ch]">
-        Reemplaza los seis Sheets de cierre. Un ajuste es un movimiento como
-        cualquier otro, con categoría <span className="text-ink-2 font-medium">ajuste de cuenta</span>, así que
-        entra al mismo libro mayor y queda en la auditoría.{" "}
-        <span className="text-ink-2 font-medium">
-          Cuando las cuatro monedas quedan en cero, el cierre se marca solo
-        </span>{" "}
-        — no hay que registrarlo aparte.
+
+      <FormAjuste
+        cuentas={cuentas
+          .filter((c) => c.movimientos > 0)
+          .map((c) => ({ id: c.id, nombre: c.nombre, saldo: c.saldo, cerrada: c.cerrada }))}
+        oficinas={oficinas}
+        fecha={HOY_DEMO}
+      />
+
+      <p className="mt-4 text-[12.5px] text-ink-3 max-w-[82ch]">
+        Un ajuste no toca ningún saldo: genera un{" "}
+        <span className="text-ink-2 font-medium">movimiento contable explícito</span> con categoría
+        de ajuste y una partida por cada moneda con saldo. Cuando las cuatro
+        quedan en cero, el cierre se marca solo en la cuenta.
       </p>
+
+      {esDemo && <ReiniciarDemo />}
     </>
   );
 }
+
+export const dynamic = "force-dynamic";

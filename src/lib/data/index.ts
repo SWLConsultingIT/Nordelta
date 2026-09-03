@@ -2,6 +2,10 @@ import "server-only";
 import type {
   Contraparte, Movimiento, Oficina, EntradaAuditoria, Categoria, Moneda, Partida,
 } from "../domain/types";
+import { CATEGORIAS_QUE_IMPACTAN, MONEDAS } from "../domain/types";
+import { calcularImpacto } from "../domain/fx";
+import { redondear } from "../domain/dinero";
+import { construirCtaCte, indiceUltimoCierre, saldoFinal } from "../domain/saldos";
 import { ErrorDatos, ErrorNoEncontrado, ErrorValidacion } from "../domain/errors";
 import { validarPartida } from "../domain/fx";
 import { validarNombreContraparte } from "../domain/contrapartes";
@@ -21,6 +25,10 @@ import { almacen } from "./memoria";
 export const usaSupabase = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 );
+
+/** En modo demostración se habilitan cosas que en producción no existen,
+ *  como el botón de restablecer los datos. */
+export const esDemo = !usaSupabase;
 
 /** Envoltura común: traduce cualquier fallo del almacén a un error de dominio. */
 async function consultar<T>(descripcion: string, fn: () => Promise<T> | T): Promise<T> {
@@ -212,4 +220,156 @@ export async function getAuditoria(limite = 200): Promise<EntradaAuditoria[]> {
       .sort((a, b) => (a.ocurrido_en < b.ocurrido_en ? 1 : -1))
       .slice(0, limite),
   );
+}
+
+/* ── Detalle y edición ──────────────────────────────────────── */
+
+export async function getMovimiento(id: string): Promise<Movimiento> {
+  const m = await consultar("la consulta del movimiento", () => almacen.obtenerMovimiento(id));
+  if (!m) throw new ErrorNoEncontrado(`No existe el movimiento ${id}`, { id });
+  return m;
+}
+
+export interface CambiosMovimiento {
+  concepto?: string;
+  categoria?: Categoria;
+  contraparte_id?: number;
+  fecha?: string;
+  oficina_id?: number;
+  partidas?: Omit<Partida, "id">[];
+}
+
+/**
+ * Reemplaza cabecera y partidas de un movimiento.
+ *
+ * Se valida todo antes de escribir: un movimiento a medio editar es un saldo
+ * incorrecto que además parece válido.
+ */
+export async function actualizarMovimiento(
+  id: string,
+  cambios: CambiosMovimiento,
+  motivo?: string,
+): Promise<Movimiento> {
+  if (cambios.fecha !== undefined && !esFechaISOValida(cambios.fecha)) {
+    throw new ErrorValidacion("La fecha no es válida", "fecha");
+  }
+  if (cambios.partidas !== undefined) {
+    if (cambios.partidas.length === 0) {
+      throw new ErrorValidacion("El movimiento necesita al menos una partida", "partidas");
+    }
+    for (let i = 0; i < cambios.partidas.length; i++) {
+      const errores = validarPartida(cambios.partidas[i], i);
+      if (errores.length > 0) throw errores[0];
+    }
+  }
+
+  const { partidas, ...cabecera } = cambios;
+  const m = await consultar("la edición del movimiento", () =>
+    almacen.actualizarMovimiento(id, cabecera, partidas, motivo),
+  );
+  if (!m) throw new ErrorNoEncontrado(`No existe el movimiento ${id}`, { id });
+  return m;
+}
+
+/* ── Consultas de pantalla ──────────────────────────────────── */
+
+export interface ContraparteConSaldo {
+  id: number;
+  nombre: string;
+  saldo: Record<Moneda, number>;
+  movimientos: number;
+  ultimoMovimiento: string | null;
+  ultimoCierre: string | null;
+  /** Verdadero cuando las cuatro monedas están en cero. */
+  cerrada: boolean;
+}
+
+/**
+ * Contrapartes con su saldo, el último movimiento y si están cerradas.
+ *
+ * Se calcula acá y no en cada pantalla para que `/cuentas`, `/balance` y
+ * `/ajustes` muestren exactamente el mismo número.
+ */
+export async function getContrapartesConSaldo(): Promise<ContraparteConSaldo[]> {
+  const [contrapartes, movimientos] = await Promise.all([
+    getContrapartes(),
+    getTodosLosMovimientos(),
+  ]);
+
+  const porContraparte = new Map<number, typeof movimientos>();
+  for (const m of movimientos) {
+    if (m.contraparte_id === null) continue;
+    const lista = porContraparte.get(m.contraparte_id) ?? [];
+    lista.push(m);
+    porContraparte.set(m.contraparte_id, lista);
+  }
+
+  return contrapartes.map((c) => {
+    const propios = porContraparte.get(c.id) ?? [];
+    const cta = construirCtaCte(propios);
+    const saldo = saldoFinal(cta);
+    const iCierre = indiceUltimoCierre(cta);
+    return {
+      id: c.id,
+      nombre: c.nombre,
+      saldo,
+      movimientos: propios.length,
+      ultimoMovimiento: propios.length
+        ? propios.reduce((max, m) => (m.fecha > max ? m.fecha : max), propios[0].fecha)
+        : null,
+      ultimoCierre: iCierre >= 0 ? cta[iCierre].movimiento.fecha : null,
+      cerrada: MONEDAS.every((m) => saldo[m] === 0) && cta.length > 0,
+    };
+  });
+}
+
+export interface ResumenDelDia {
+  fecha: string;
+  ingresos: Partial<Record<Moneda, number>>;
+  egresos: Partial<Record<Moneda, number>>;
+  neto: Partial<Record<Moneda, number>>;
+  movimientos: number;
+  /** Movimientos del día que por definición no tocan la cuenta corriente. */
+  sinImpacto: number;
+  chequesDelDia: number;
+}
+
+/** Lo que `/inicio` necesita para responder qué está pasando hoy. */
+export async function getResumenDelDia(fecha: string): Promise<ResumenDelDia> {
+  const movimientos = (await getTodosLosMovimientos()).filter((m) => m.fecha === fecha);
+
+  const ingresos: Partial<Record<Moneda, number>> = {};
+  const egresos: Partial<Record<Moneda, number>> = {};
+  const neto: Partial<Record<Moneda, number>> = {};
+  let sinImpacto = 0;
+  let chequesDelDia = 0;
+
+  for (const m of movimientos) {
+    if (m.partidas.some((p) => p.medio_pago === "cheque")) chequesDelDia++;
+    if (!CATEGORIAS_QUE_IMPACTAN.has(m.categoria)) { sinImpacto++; continue; }
+    for (const p of m.partidas) {
+      if (p.monto_nominal === 0) continue;
+      const { moneda, monto } = calcularImpacto(p);
+      const destino = monto >= 0 ? ingresos : egresos;
+      destino[moneda] = redondear((destino[moneda] ?? 0) + monto, 2);
+      neto[moneda] = redondear((neto[moneda] ?? 0) + monto, 2);
+    }
+  }
+
+  return { fecha, ingresos, egresos, neto, movimientos: movimientos.length, sinImpacto, chequesDelDia };
+}
+
+/* ── Demostración ───────────────────────────────────────────── */
+
+/**
+ * Vuelve el dataset al estado inicial.
+ *
+ * Solo existe en modo demostración: sirve para poder repetir el recorrido de
+ * una demo sin reiniciar el servidor.
+ */
+export async function restablecerDemo(): Promise<void> {
+  if (!esDemo) {
+    throw new ErrorValidacion("Los datos solo se pueden restablecer en modo demostración");
+  }
+  almacen.restablecer();
 }
