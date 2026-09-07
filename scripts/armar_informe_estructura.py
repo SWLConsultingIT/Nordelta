@@ -3795,3 +3795,10 @@ subprocess.run(
 )
 print(f"pdf   {SALIDA_PDF.relative_to(RAIZ)}  ({SALIDA_PDF.stat().st_size / 1e6:.1f} MB)"
       f"  ·  {len(PAGINAS)} secciones")
+
+# Copia en la carpeta de entregables, al lado del repositorio, para que los
+# PDF se encuentren sin entrar a docs/.
+copia = RAIZ.parent / "pdfs" / "2026-09-07 · Nordelta · Arquitectura de producto.pdf"
+if copia.parent.is_dir():
+    copia.write_bytes(SALIDA_PDF.read_bytes())
+    print(f"copia {copia}")

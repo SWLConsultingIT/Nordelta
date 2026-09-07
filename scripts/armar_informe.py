@@ -3,19 +3,31 @@
 
 Las capturas van embebidas en base64 para que Chrome no dependa de rutas
 relativas al imprimir, y para que el HTML se pueda mover solo.
+
+Uso:
+    CAPTURAS=<directorio> python3 scripts/armar_informe.py
+
+Las capturas se toman contra el build de producción (`npx next start`), no
+contra el servidor de desarrollo: ese dibuja su propio indicador en la
+esquina. Los nombres esperados son los de las llamadas a `captura()`.
 """
 import base64
+import os
 import pathlib
 import subprocess
+import sys
 
-BASE = pathlib.Path(__file__).parent
-IMG = BASE / "informe"
-SALIDA_HTML = BASE / "informe.html"
+RAIZ = pathlib.Path(__file__).resolve().parent.parent
+IMG = pathlib.Path(os.environ.get("CAPTURAS", RAIZ / "docs" / "capturas"))
+SALIDA_HTML = RAIZ / "docs" / "informe-mvp-next-level.html"
+DESTINO_PDF = RAIZ.parent / "pdfs" / "2026-09-03 · Nordelta · Informe MVP Next Level.pdf"
 
 
 def img(nombre: str) -> str:
-    datos = (IMG / f"{nombre}.png").read_bytes()
-    return "data:image/png;base64," + base64.b64encode(datos).decode()
+    ruta = IMG / f"{nombre}.png"
+    if not ruta.exists():
+        sys.exit(f"falta la captura {ruta} · pasá CAPTURAS=<directorio>")
+    return "data:image/png;base64," + base64.b64encode(ruta.read_bytes()).decode()
 
 
 def captura(nombre, titulo, pie, alto=None) -> str:
@@ -651,19 +663,17 @@ HTML = f"""<!doctype html>
 SALIDA_HTML.write_text(HTML)
 print(f"html: {SALIDA_HTML} ({SALIDA_HTML.stat().st_size / 1e6:.1f} MB)")
 
-destino = pathlib.Path(
-    "/Users/fran/Desktop/Laburo/Nordelta/Nordelta-Informe-MVP-Next-Level.pdf"
-)
+DESTINO_PDF.parent.mkdir(parents=True, exist_ok=True)
 subprocess.run(
     [
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         "--headless", "--disable-gpu", "--no-sandbox",
         "--no-pdf-header-footer",
-        f"--print-to-pdf={destino}",
+        f"--print-to-pdf={DESTINO_PDF}",
         "--virtual-time-budget=20000",
         SALIDA_HTML.as_uri(),
     ],
     check=True,
     capture_output=True,
 )
-print(f"pdf:  {destino} ({destino.stat().st_size / 1e6:.1f} MB)")
+print(f"pdf:  {DESTINO_PDF} ({DESTINO_PDF.stat().st_size / 1e6:.1f} MB)")
