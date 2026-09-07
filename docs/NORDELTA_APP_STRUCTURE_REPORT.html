@@ -22,8 +22,17 @@ body {
   font-family:var(--sans); color:var(--ink); font-size:8.9pt; line-height:1.5;
   -webkit-font-smoothing:antialiased; background:var(--surface);
 }
-.hoja { page-break-after:always; position:relative; }
+.hoja { page-break-after:always; position:relative; min-height:184mm; }
 .hoja:last-child { page-break-after:auto; }
+
+/* El pie va absoluto contra el fondo de la página, y por eso `.hoja` tiene
+   `min-height`: sin eso quedaría pegado al final del contenido. */
+.folio { position:absolute; left:0; right:0; bottom:0; display:flex;
+         align-items:baseline; gap:2mm; padding-top:1.4mm;
+         border-top:.6pt solid var(--line-soft); }
+.folio span { font-family:var(--mono); font-size:6pt; letter-spacing:.12em;
+              text-transform:uppercase; color:var(--ink-4); }
+.folio .n { margin-left:auto; color:var(--ink-3); font-weight:600; }
 
 /* ── Tipografía ─────────────────────────────────────────────── */
 h1 { font-size:26pt; font-weight:700; letter-spacing:-.03em; line-height:1.04; margin:0; }
@@ -279,7 +288,7 @@ ol.num > li::before {
     su versión HTML, este PDF y el generador <code>scripts/armar_informe_estructura.py</code>.
     Detalle en la sección 39.</p>
   </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">2 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">01</span><h2>Executive summary</h2><p class="sub">El hallazgo, la propuesta y los bloqueantes</p></div>
   
@@ -341,7 +350,7 @@ ol.num > li::before {
   cualquier parser y cualquier regla de matching que diseñemos es una apuesta. Es el
   primer punto del checklist de accesos y la primera tarea del roadmap.</p>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">3 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">02</span><h2>El hallazgo</h2><p class="sub">Dos mitades y una costura</p></div>
   
@@ -422,7 +431,7 @@ ol.num > li::before {
     </ul>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">4 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">03</span><h2>Qué problema estamos resolviendo</h2><p class="sub">Por qué el estado no existe como dato</p></div>
   
@@ -486,7 +495,7 @@ ol.num > li::before {
     </div>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">5 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">04</span><h2>Cómo funciona hoy</h2><p class="sub">Las dos cadenas: contable y de acreditaciones</p></div>
   
@@ -550,7 +559,7 @@ calcula enviado · acreditado · pendiente <i>manual</i></pre>
     </div>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">6 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">05</span><h2>Principales pain points</h2><p class="sub">Siete, y el que ordena el diseño</p></div>
   
@@ -603,7 +612,7 @@ calcula enviado · acreditado · pendiente <i>manual</i></pre>
     puede variar entre corridas.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">7 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">06</span><h2>Qué existe actualmente en la app</h2><p class="sub">Auditado sobre el código, no sobre documentación previa</p></div>
   
@@ -656,7 +665,7 @@ calcula enviado · acreditado · pendiente <i>manual</i></pre>
 <code>/cuentas/[id]</code> · <code>/balance</code> · <code>/ajustes</code> ·
 <code>/auditoria</code> · <code>/api/export</code>. Nueve pantallas más la portada, todas
 navegables con dataset de demostración determinístico.</p>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">8 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">07</span><h2>El motor financiero que ya está</h2><p class="sub">Volumen de código y garantías verificadas</p></div>
   
@@ -715,7 +724,7 @@ navegables con dataset de demostración determinístico.</p>
     </div>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">9 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">08</span><h2>Qué conservamos</h2><p class="sub">Matriz de reutilización · 21 áreas auditadas</p></div>
   
@@ -752,7 +761,7 @@ navegables con dataset de demostración determinístico.</p>
     necesita la ingesta de Excel.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">10 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">09</span><h2>Qué cambia</h2><p class="sub">Hoy contra la propuesta, pantalla por pantalla</p></div>
   
@@ -774,7 +783,7 @@ navegables con dataset de demostración determinístico.</p>
     <p class="mini" style="color:var(--ink-2);margin-bottom:0">Home es el rediseño de
     fondo. El resto son extensiones sobre pantallas que ya andan.</p></div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">11 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">10</span><h2>Arquitectura de información propuesta</h2><p class="sub">Cinco decisiones de estructura, con su razón</p></div>
   
@@ -851,7 +860,7 @@ CONTROL       <b>Auditoría</b> · <b>Configuración</b></pre>
     </div>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">12 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">11</span><h2>Sitemap</h2><p class="sub">El árbol completo · en negro lo que ya existe</p></div>
   
@@ -928,7 +937,7 @@ CONTROL       <b>Auditoría</b> · <b>Configuración</b></pre>
     compartir.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">13 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">12</span><h2>Módulos principales</h2><p class="sub">Siete módulos, y una sola costura entre las dos mitades</p></div>
   
@@ -995,7 +1004,7 @@ CONTROL       <b>Auditoría</b> · <b>Configuración</b></pre>
     módulo.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">14 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">13</span><h2>Home</h2><p class="sub">Centro de operaciones · wireframe</p></div>
   
@@ -1122,7 +1131,7 @@ CONTROL       <b>Auditoría</b> · <b>Configuración</b></pre>
     </div>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">15 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">14</span><h2>Acreditaciones · estados</h2><p class="sub">Dos ejes, no uno</p></div>
   
@@ -1207,7 +1216,7 @@ CONTROL       <b>Auditoría</b> · <b>Configuración</b></pre>
     y el operador tiene que ver las dos cosas antes de decidir si corrige o descarta.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">16 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">15</span><h2>Acreditaciones · pantalla</h2><p class="sub">La bandeja única · wireframe</p></div>
   
@@ -1319,7 +1328,7 @@ CONTROL       <b>Auditoría</b> · <b>Configuración</b></pre>
     <p class="mini" style="color:var(--ink-2);margin-bottom:0">Este botón, solo, elimina el
     paso más caro del flujo actual. Es el <b>primer valor entregable</b> del proyecto.</p></div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">17 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">16</span><h2>Importación de archivos · flujo</h2><p class="sub">Ocho pasos que reemplazan la limpieza manual</p></div>
   
@@ -1399,7 +1408,7 @@ bandeja de acreditaciones · estado «recibida»</pre>
     validación</b>, sólo evita la subida del archivo.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">18 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">17</span><h2>Importación · preview editable</h2><p class="sub">Donde se corrige antes de procesar · wireframe</p></div>
   
@@ -1512,7 +1521,7 @@ bandeja de acreditaciones · estado «recibida»</pre>
     importar todo y revisar después. La segunda existe porque a veces el archivo hay que
     mandarlo ya y los errores se resuelven en paralelo.</p></div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">19 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">18</span><h2>Validación de CUIT</h2><p class="sub">Cinco resultados y una regla que no se cruza</p></div>
   
@@ -1605,7 +1614,7 @@ bandeja de acreditaciones · estado «recibida»</pre>
     </div>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">20 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">19</span><h2>Conciliación · pantalla</h2><p class="sub">Enviado contra acreditado · wireframe</p></div>
   
@@ -1718,7 +1727,7 @@ bandeja de acreditaciones · estado «recibida»</pre>
     </ul>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">21 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">20</span><h2>Matching</h2><p class="sub">Señales, unicidad, y lo que no vamos a hacer</p></div>
   
@@ -1796,7 +1805,7 @@ bandeja de acreditaciones · estado «recibida»</pre>
     que no se pueda deshacer y explicar.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">22 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">21</span><h2>Clientes</h2><p class="sub">Una pantalla con pestañas, y por qué · wireframe</p></div>
   
@@ -1896,7 +1905,7 @@ bandeja de acreditaciones · estado «recibida»</pre>
     </div>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">23 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">22</span><h2>Cuenta corriente</h2><p class="sub">La cadena completa del dato</p></div>
   
@@ -1951,7 +1960,7 @@ bandeja de acreditaciones · estado «recibida»</pre>
     ni exige migrar datos.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">24 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">23</span><h2>Carga manual y Balance</h2><p class="sub">Lo que no se toca</p></div>
   
@@ -2017,7 +2026,7 @@ bandeja de acreditaciones · estado «recibida»</pre>
     está escrito y probado.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">25 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">24</span><h2>Ajustes y Auditoría</h2><p class="sub">Lo que se muda y lo que se extiende</p></div>
   
@@ -2079,7 +2088,7 @@ bandeja de acreditaciones · estado «recibida»</pre>
     </div>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">26 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">25</span><h2>User flows · 1 y 2</h2><p class="sub">Recepción y conciliación</p></div>
   
@@ -2173,7 +2182,7 @@ genera <b>MOVIMIENTO</b> contable
     no se automatizan.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">27 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">26</span><h2>User flows · 3, 4 y 5</h2><p class="sub">Cliente, carga manual y ajuste</p></div>
   
@@ -2294,7 +2303,7 @@ con el motivo</pre>
     mismo.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">28 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">27</span><h2>Arquitectura técnica</h2><p class="sub">Conservar el stack, y qué se agrega</p></div>
   
@@ -2378,7 +2387,7 @@ con el motivo</pre>
     </div>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">29 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">28</span><h2>Infraestructura y hosting</h2><p class="sub">Recomendación</p></div>
   
@@ -2448,7 +2457,7 @@ con el motivo</pre>
   puede desarrollar y demostrar el producto sin tocar datos reales ni pagar un ambiente
   más. Es una ventaja que ya está construida y conviene no perderla.</p>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">30 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">29</span><h2>Hosting · alternativa evaluada</h2><p class="sub">VPS propio, con pros y contras</p></div>
   
@@ -2512,7 +2521,7 @@ teórica. Se evaluó en serio.</p>
     </div>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">31 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">30</span><h2>Arquitectura de datos</h2><p class="sub">El flujo y la costura · propuesta conceptual</p></div>
   
@@ -2607,7 +2616,7 @@ movimiento     N ── 1  contraparte    <b>EXISTE</b></pre>
     <code>referencia_externa</code>.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">32 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">31</span><h2>Arquitectura de datos · tablas</h2><p class="sub">Ocho tablas nuevas · el esquema contable no se toca</p></div>
   
@@ -2686,7 +2695,7 @@ movimiento     N ── 1  contraparte    <b>EXISTE</b></pre>
     existentes no se editan.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">33 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">32</span><h2>Integraciones</h2><p class="sub">Mapa de sistemas externos</p></div>
   
@@ -2751,7 +2760,7 @@ movimiento     N ── 1  contraparte    <b>EXISTE</b></pre>
     secretos.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">34 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">33</span><h2>Accesos necesarios</h2><p class="sub">Checklist para el cliente · sin contraseñas en este documento</p></div>
   
@@ -2837,7 +2846,7 @@ movimiento     N ── 1  contraparte    <b>EXISTE</b></pre>
     </div>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">35 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">34</span><h2>MVP</h2><p class="sub">Alcance, fase 2 y futuro</p></div>
   
@@ -2936,7 +2945,7 @@ movimiento     N ── 1  contraparte    <b>EXISTE</b></pre>
     construida y probada.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">36 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">35</span><h2>Roadmap</h2><p class="sub">Seis fases · las duraciones son estimaciones sujetas a la fase 0</p></div>
   
@@ -3008,7 +3017,7 @@ movimiento     N ── 1  contraparte    <b>EXISTE</b></pre>
 <p class="mini" style="margin-top:2.6mm;max-width:200mm;margin-bottom:0"><b>Sobre las
 duraciones.</b> Semanas de una persona dedicada, y son estimaciones, no compromisos. La
 fase 3 es la que más puede moverse, por la razón del riesgo número 1.</p>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">37 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">36</span><h2>Roadmap · detalle por fase</h2><p class="sub">Entregables, riesgos y cómo lo valida el cliente</p></div>
   
@@ -3123,7 +3132,7 @@ fase 3 es la que más puede moverse, por la razón del riesgo número 1.</p>
     </div>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">38 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">37</span><h2>Decisiones pendientes</h2><p class="sub">Doce nuevas, y las que siguen abiertas de la etapa anterior</p></div>
   
@@ -3248,7 +3257,7 @@ fase 3 es la que más puede moverse, por la razón del riesgo número 1.</p>
     <b>no se inventan</b>.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">39 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">38</span><h2>Riesgos</h2><p class="sub">Once, ordenados por probabilidad × impacto · sin relleno teórico</p></div>
   
@@ -3328,7 +3337,7 @@ fase 3 es la que más puede moverse, por la razón del riesgo número 1.</p>
   archivos reales antes de escribir código.</b> Es la razón de existir de la fase 0, y es
   lo único que este informe pide con urgencia.</p>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">40 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">39</span><h2>Próximos pasos</h2><p class="sub">Quién hace qué, y qué no vamos a hacer</p></div>
   
@@ -3409,7 +3418,7 @@ fase 3 es la que más puede moverse, por la razón del riesgo número 1.</p>
     del build.</p>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">41 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">40</span><h2>Anexo · Matriz de pantallas</h2><p class="sub">Diecisiete pantallas · objetivo, usuario, datos, acción, estado</p></div>
   
@@ -3443,7 +3452,7 @@ fase 3 es la que más puede moverse, por la razón del riesgo número 1.</p>
       <p class="mini" style="color:var(--ink-2);margin:.8mm 0 0;font-size:6.8pt">fusionar</p></div>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">42 / 43</span></div></section>
 <section class="hoja">
   <div class="sec"><span class="n">41</span><h2>Anexo · Principios de UX y dirección visual</h2><p class="sub">Diez principios que deberían guiar la implementación</p></div>
   
@@ -3519,5 +3528,5 @@ fase 3 es la que más puede moverse, por la razón del riesgo número 1.</p>
     </div>
   </div>
 </div>
-</section>
+<div class="folio"><span>Nordelta · Arquitectura de producto · septiembre 2026</span><span class="n">43 / 43</span></div></section>
 </body></html>

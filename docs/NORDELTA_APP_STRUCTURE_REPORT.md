@@ -5,6 +5,10 @@
 Fuente editable del informe. El PDF presentable se genera con
 `scripts/armar_informe_estructura.py`.
 
+**Hay una versión resumida.** `NORDELTA_APP_STRUCTURE_RESUMEN.pdf`, siete
+páginas, una pregunta por página, con un puntero desde cada una a la sección
+de acá donde está el detalle. Se genera con `scripts/armar_resumen.py`.
+
 **Sobre la numeración.** Este documento tiene 33 secciones más dos anexos. El
 PDF cubre el mismo contenido en 41 secciones, porque parte las más densas —
 acreditaciones, importación, conciliación — en una página por wireframe para
