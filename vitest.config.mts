@@ -8,7 +8,7 @@ export default defineConfig({
       // `server-only` solo existe dentro del bundler de Next. Es un guardián
       // de compilación, no código: para los tests se reemplaza por un módulo
       // vacío y así la capa de datos se puede ejercitar de verdad.
-      "server-only": path.resolve(import.meta.dirname, "tests/_server-only.ts"),
+      "server-only": path.resolve(import.meta.dirname, "tooling/server-only.ts"),
     },
   },
   test: {

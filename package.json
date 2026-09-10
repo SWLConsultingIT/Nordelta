@@ -20,8 +20,8 @@
     "conciliar": "tsx scripts/conciliar-poc.mts",
     "ground-truth": "tsx scripts/ground-truth.mts",
     "benchmark": "tsx scripts/benchmark-independiente.mts",
-    "supabase:seed": "tsx scripts/supabase-seed.mts",
-    "supabase:rls": "tsx scripts/supabase-rls.mts"
+    "supabase:seed": "tsx --tsconfig tsconfig.scripts.json scripts/supabase-seed.mts",
+    "supabase:rls": "tsx --tsconfig tsconfig.scripts.json scripts/supabase-rls.mts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",
