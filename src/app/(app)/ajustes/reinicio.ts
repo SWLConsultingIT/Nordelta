@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { exigirSesion } from "@/lib/auth";
 import { restablecerDemo, esDemo } from "@/lib/data";
+import { restablecerOperaciones } from "@/lib/data/operaciones";
 import { aResultadoError, ErrorValidacion, type Resultado } from "@/lib/domain/errors";
 
 /**
@@ -18,7 +19,11 @@ export async function reiniciarDatosDemo(): Promise<Resultado<{ ok: true }>> {
       throw new ErrorValidacion("Los datos solo se restablecen en modo demostración");
     }
     await restablecerDemo();
-    for (const r of ["/inicio", "/carga", "/cuentas", "/balance", "/ajustes", "/auditoria"]) {
+    await restablecerOperaciones();
+    for (const r of [
+      "/inicio", "/carga", "/cuentas", "/balance", "/ajustes", "/auditoria",
+      "/conciliacion", "/planillas", "/clientes", "/fullcarga",
+    ]) {
       revalidatePath(r, "layout");
     }
     return { ok: true, datos: { ok: true } };

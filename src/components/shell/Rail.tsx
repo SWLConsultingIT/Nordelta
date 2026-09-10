@@ -3,26 +3,43 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cx } from "../ui";
-import { IcoInicio, IcoGrid, IcoPeople, IcoBars, IcoScale, IcoShield } from "../ui/icons";
+import {
+  IcoInicio, IcoGrid, IcoPeople, IcoBars, IcoScale, IcoShield,
+  IcoCheck, IcoPlanilla, IcoCliente, IcoBolt,
+} from "../ui/icons";
 
 /**
  * Riel de navegación.
  *
- * Cinco destinos agrupados por para qué se entra. El estado activo se marca
- * con tres señales a la vez —fondo, color e indicador lateral— porque solo
- * con color se pierde de un barrido.
+ * Tres grupos que responden a para qué se entra: **operación** —el trabajo
+ * diario de Mati—, **finanzas** —el libro— y **control**. El orden no es
+ * decorativo: acreditaciones va primero porque es el trabajo principal.
  *
- * La estructura es una grilla de tres filas para que el bloque de usuario
- * quede fijo abajo sin depender de la altura del contenido.
+ * El estado activo se marca con fondo e indicador lateral, no con color
+ * saturado: en una barra oscura, un azul fuerte compite con el contador de
+ * excepciones, que es lo único que tiene que llamar la atención.
  */
 const GRUPOS: {
   titulo: string | null;
-  items: { href: string; label: string; Icon: (p: { className?: string }) => React.ReactNode }[];
+  items: {
+    href: string;
+    label: string;
+    Icon: (p: { className?: string }) => React.ReactNode;
+    /** Nombre del contador que se muestra al lado, si hay alguno. */
+    contador?: "atencion";
+  }[];
 }[] = [
   { titulo: null, items: [{ href: "/inicio", label: "Inicio", Icon: IcoInicio }] },
-  { titulo: "Operación", items: [{ href: "/carga", label: "Carga", Icon: IcoGrid }] },
   {
-    titulo: "Consultas",
+    titulo: "Operación",
+    items: [
+      { href: "/conciliacion", label: "Conciliación", Icon: IcoCheck, contador: "atencion" },
+      { href: "/planillas", label: "Planillas", Icon: IcoPlanilla },
+      { href: "/clientes", label: "Clientes", Icon: IcoCliente },
+    ],
+  },
+  {
+    titulo: "Finanzas",
     items: [
       { href: "/cuentas", label: "Cuentas", Icon: IcoPeople },
       { href: "/balance", label: "Balance", Icon: IcoBars },
@@ -31,59 +48,93 @@ const GRUPOS: {
   {
     titulo: "Control",
     items: [
-      { href: "/ajustes", label: "Ajustes", Icon: IcoScale },
       { href: "/auditoria", label: "Auditoría", Icon: IcoShield },
     ],
   },
 ];
 
+/**
+ * Lo que no compite con el trabajo diario.
+ *
+ * Fullcarga es una integración, no algo que Mati administre: se actualiza
+ * desde la conciliación y su pantalla es para cuando algo falla. La carga
+ * de movimientos y los ajustes existen, pero no son el flujo principal.
+ * Ponerlos al mismo nivel obligaba a decidir entre nueve destinos cada vez
+ * que se entra.
+ */
+const SECUNDARIOS: { href: string; label: string; Icon: (p: { className?: string }) => React.ReactNode }[] = [
+  { href: "/fullcarga", label: "Fullcarga", Icon: IcoBolt },
+  { href: "/carga", label: "Carga manual", Icon: IcoGrid },
+  { href: "/ajustes", label: "Ajustes", Icon: IcoScale },
+];
+
+
+/** Iniciales para el avatar. Dos letras, del nombre y no del correo. */
+function iniciales(nombre: string): string {
+  const partes = nombre.trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return "?";
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+}
+
 export function Rail({
+  nombre,
   email,
-  oficina,
+  organizacion,
   demo,
+  atencion = 0,
 }: {
+  /** Nombre para mostrar. Nunca un identificador técnico. */
+  nombre: string;
   email: string;
-  oficina: string;
+  organizacion: string;
   demo: boolean;
+  /** Operaciones que requieren que alguien haga algo. Visible desde
+   *  cualquier pantalla: es lo primero que Mati necesita saber. */
+  atencion?: number;
 }) {
   const path = usePathname();
 
   return (
     <nav
       aria-label="Navegación principal"
-      className="bg-navy border-r border-navy-3 md:grid md:grid-rows-[auto_1fr_auto] md:h-screen md:sticky md:top-0
-                 flex items-center gap-1 px-3 py-3 md:py-4 overflow-x-auto md:overflow-visible"
+      className="bg-navy border-r border-navy-2 md:grid md:grid-rows-[auto_1fr_auto] md:h-screen
+                 md:sticky md:top-0 md:overflow-hidden
+                 flex items-center gap-1 px-3 py-3 md:px-3 md:py-4 overflow-x-auto md:overflow-x-hidden"
     >
       {/* Marca */}
       <Link
         href="/inicio"
-        className="flex items-center gap-2.5 px-1.5 md:mb-2 pr-4 md:pr-1.5 shrink-0 rounded-lg"
+        className="flex items-center gap-2.5 px-1.5 md:mb-1 pr-4 md:pr-1.5 shrink-0 rounded-lg"
       >
         <span
-          className="w-[28px] h-[28px] rounded-[9px] grid place-items-center font-mono text-[12.5px]
-                     font-bold text-white flex-none bg-gradient-to-b from-brand-hi to-brand"
+          className="w-[26px] h-[26px] rounded-lg grid place-items-center font-mono text-[12px]
+                     font-semibold text-on-navy flex-none bg-navy-4 border border-navy-4"
         >
           N
         </span>
-        <span className="hidden md:flex flex-col leading-none gap-[3px]">
+        <span className="hidden md:flex items-baseline gap-1.5 min-w-0">
           <span className="text-on-navy text-[13.5px] font-semibold tracking-[-0.012em]">Nordelta</span>
-          <span className="font-mono text-[8.5px] tracking-[0.14em] uppercase text-on-navy-3">
-            {demo ? "Demostración" : "Operaciones"}
-          </span>
+          {demo && (
+            <span className="text-[9px] font-medium tracking-[0.04em] uppercase text-on-navy-3
+                             border border-navy-4 rounded px-1 py-px leading-[1.4]">
+              demo
+            </span>
+          )}
         </span>
       </Link>
 
       {/* Navegación */}
-      <div className="contents md:flex md:flex-col md:gap-0.5 md:min-h-0 md:overflow-y-auto">
+      <div className="contents md:flex md:flex-col md:gap-px md:min-h-0 md:overflow-y-auto md:pt-2">
         {GRUPOS.map((g, i) => (
           <div key={g.titulo ?? `g${i}`} className="contents md:block">
             {g.titulo && (
-              <div className="hidden md:block font-mono text-[8.5px] tracking-[0.15em] uppercase
-                              text-on-navy-3 px-2.5 pt-4 pb-1.5">
+              <div className="hidden md:block text-[10.5px] font-medium tracking-[0.02em]
+                              text-on-navy-3 px-2.5 pt-5 pb-1.5">
                 {g.titulo}
               </div>
             )}
-            {g.items.map(({ href, label, Icon }) => {
+            {g.items.map(({ href, label, Icon, contador }) => {
               const activo = path === href || path.startsWith(href + "/");
               return (
                 <Link
@@ -91,22 +142,29 @@ export function Rail({
                   href={href}
                   aria-current={activo ? "page" : undefined}
                   className={cx(
-                    "relative flex items-center gap-2.5 px-2.5 h-[34px] rounded-lg text-[13px]",
-                    "whitespace-nowrap shrink-0 transition-colors duration-100",
+                    "relative flex items-center gap-2.5 px-2.5 h-[32px] rounded-lg text-[13px]",
+                    "whitespace-nowrap shrink-0 transition-colors duration-150",
                     activo
-                      ? "bg-navy-3 text-on-navy font-semibold"
+                      ? "bg-navy-3 text-on-navy font-medium"
                       : "text-on-navy-2 hover:bg-navy-2 hover:text-on-navy",
                   )}
                 >
                   {activo && (
                     <span
                       aria-hidden
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-[2.5px] h-[16px] rounded-r
-                                 bg-brand-hi"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-[14px] rounded-r bg-brand-hi"
                     />
                   )}
-                  <Icon className={cx("w-[15px] h-[15px] flex-none", activo ? "text-brand-hi" : "opacity-75")} />
-                  {label}
+                  <Icon className={cx("w-[15px] h-[15px] flex-none", activo ? "text-on-navy" : "opacity-70")} />
+                  <span className="min-w-0 truncate">{label}</span>
+                  {contador === "atencion" && atencion > 0 && (
+                    <span
+                      className="ml-auto hidden md:block t-num text-[10.5px] font-medium text-warn-hi tabular-nums"
+                      title={`${atencion} requieren atención`}
+                    >
+                      {atencion}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -114,31 +172,54 @@ export function Rail({
         ))}
       </div>
 
-      {/* Usuario y contexto */}
-      <div className="hidden md:block pt-3 mt-2 border-t border-navy-2">
-        <div className="flex items-center gap-2.5 px-1.5">
-          <span className="w-[26px] h-[26px] rounded-full bg-navy-3 text-on-navy grid place-items-center
-                           text-[10px] font-semibold flex-none">
-            {email.slice(0, 2).toUpperCase()}
-          </span>
-          <span className="min-w-0 leading-tight flex-1">
-            <span className="block text-on-navy text-[11.5px] font-medium truncate">{email}</span>
-            <span className="block font-mono text-[9px] tracking-[0.08em] uppercase text-on-navy-3 truncate">
-              {oficina}
-            </span>
-          </span>
-          <Link
-            href="/"
-            aria-label="Salir"
-            className="w-7 h-7 grid place-items-center rounded-lg text-on-navy-3 hover:bg-navy-2
-                       hover:text-on-navy flex-none"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}
-                 strokeLinecap="round" className="w-[14px] h-[14px]" aria-hidden>
-              <path d="M14 5.5H6.5v13H14M11 12h9M16.5 8.5 20 12l-3.5 3.5" />
-            </svg>
-          </Link>
-        </div>
+      {/* Secundario: presente pero sin competir con el flujo. */}
+      <div className="hidden md:flex md:flex-col md:gap-px md:mt-auto md:pt-4">
+        {SECUNDARIOS.map(({ href, label, Icon }) => {
+          const activo = path === href || path.startsWith(href + "/");
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={activo ? "page" : undefined}
+              className={cx(
+                "relative flex items-center gap-2.5 px-2.5 h-[30px] rounded-lg text-[12.5px]",
+                "whitespace-nowrap transition-colors duration-150",
+                activo
+                  ? "bg-navy-3 text-on-navy font-medium"
+                  : "text-on-navy-3 hover:bg-navy-2 hover:text-on-navy-2",
+              )}
+            >
+              <Icon className="w-[14px] h-[14px] flex-none opacity-70" />
+              <span className="min-w-0 truncate">{label}</span>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Usuario */}
+      <div className="hidden md:flex items-center gap-2.5 mt-3 pt-3 px-1.5 border-t border-navy-2">
+        <span
+          className="w-[24px] h-[24px] rounded-full bg-navy-3 text-on-navy-2 grid place-items-center
+                     text-[9.5px] font-semibold flex-none"
+          title={email}
+        >
+          {iniciales(nombre)}
+        </span>
+        <span className="min-w-0 flex-1 leading-tight">
+          <span className="block text-on-navy-2 text-[11.5px] truncate">{nombre}</span>
+          <span className="block text-[10px] text-on-navy-3 truncate">{organizacion}</span>
+        </span>
+        <Link
+          href="/"
+          aria-label="Salir"
+          className="w-7 h-7 grid place-items-center rounded-lg text-on-navy-3 hover:bg-navy-2
+                     hover:text-on-navy flex-none transition-colors duration-150"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}
+               strokeLinecap="round" className="w-[14px] h-[14px]" aria-hidden>
+            <path d="M14 5.5H6.5v13H14M11 12h9M16.5 8.5 20 12l-3.5 3.5" />
+          </svg>
+        </Link>
       </div>
     </nav>
   );

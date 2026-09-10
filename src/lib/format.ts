@@ -63,3 +63,22 @@ export function esFechaISOValida(s: string): boolean {
   const d = new Date(s + "T12:00:00");
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
 }
+
+/**
+ * «hace 12 min», «hace 3 h», «ayer».
+ *
+ * Para una herramienta operativa, saber que la conciliación corrió hace
+ * doce minutos dice más que un reloj: la pregunta es si el número que se
+ * está mirando sigue siendo cierto.
+ */
+export function desdeHace(momentoISO: string, ahora = new Date()): string {
+  const t = Date.parse(momentoISO.length <= 19 ? `${momentoISO}Z` : momentoISO);
+  if (Number.isNaN(t)) return "hace un rato";
+  const min = Math.floor((ahora.getTime() - t) / 60000);
+  if (min < 1) return "recién";
+  if (min < 60) return `hace ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `hace ${h} h`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? "ayer" : `hace ${d} días`;
+}

@@ -1,52 +1,62 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Badge, Button, Card, CardBar, CardFoot, Estado, Monto, PageHeader,
-  SinValor, TablaShell, Th, Vacio, cx,
+  Badge, Button, Estado, Monto, PageHeader, SinValor, TablaShell, Th, Vacio, cx,
 } from "@/components/ui";
+import { IcoMas } from "@/components/ui/icons";
+import { HeroConciliacion } from "@/components/operaciones/Banda";
+import { Bandeja } from "@/components/operaciones/Bandeja";
+import { Seccion } from "@/components/operaciones/Seccion";
+import { ESTADO_PLANILLA } from "../planillas/page";
+import { getOficinas, getResumenDelDia, getTodosLosMovimientos, getContrapartes } from "@/lib/data";
 import {
-  IcoArrow, IcoBars, IcoCheque, IcoGrid, IcoPeople, IcoShield,
-} from "@/components/ui/icons";
-import {
-  getContrapartes, getOficinas, getResumenDelDia, getTodosLosMovimientos,
-} from "@/lib/data";
+  getOperaciones, getPlanillas, getResumenOperativo,
+} from "@/lib/data/operaciones";
 import { HOY_DEMO } from "@/lib/data/dataset";
 import { impactoPorMoneda } from "@/lib/domain/fx";
 import { CATEGORIAS_QUE_IMPACTAN, MONEDAS, type Moneda } from "@/lib/domain/types";
-import { ETIQUETA_CATEGORIA } from "@/lib/domain/parseo";
-import { fmtFecha, fmtFechaLarga } from "@/lib/format";
+import { desdeHace, fmtFecha, fmtFechaLarga, hoyISO } from "@/lib/format";
+
+// El estado operativo cambia con cada corrida y cada importación.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Inicio" };
 
 /**
  * Centro de operaciones.
  *
- * Responde una sola pregunta: qué está pasando hoy. Primero el neto del día,
- * que es el número por el que se pregunta; después la actividad y lo que
- * requiere atención. Un tablero lleno de indicadores no ayuda a operar.
+ * El orden de la página **es** la respuesta a «qué tengo que hacer»:
+ * primero cuánto resolvió el sistema solo, después lo que quedó para una
+ * persona, después de dónde vino y recién al final el estado financiero.
+ *
+ * Ese orden cambió a propósito. Antes lo primero era el neto del día por
+ * moneda: cuatro números grandes que no le dicen a Mati qué hacer con su
+ * mañana. La conciliación es el trabajo; el libro es la consecuencia.
  */
 export default async function InicioPage() {
-  const hoy = HOY_DEMO;
-  const [resumen, movimientos, contrapartes, oficinas] = await Promise.all([
-    getResumenDelDia(hoy),
-    getTodosLosMovimientos(),
-    getContrapartes(),
-    getOficinas(),
-  ]);
+  const hoy = hoyISO();
+  const [operativo, atencion, planillas, resumen, movimientos, contrapartes, oficinas] =
+    await Promise.all([
+      getResumenOperativo(),
+      getOperaciones({ orden: "ANTIGUEDAD" }),
+      getPlanillas(),
+      getResumenDelDia(HOY_DEMO),
+      getTodosLosMovimientos(),
+      getContrapartes(),
+      getOficinas(),
+    ]);
 
+  const requierenAtencion = atencion.filter(
+    (o) => o.bucket === "PENDIENTE" || o.bucket === "REVISION" || o.bucket === "ERROR",
+  );
   const nombre = (id: number | null) => contrapartes.find((c) => c.id === id)?.nombre ?? "—";
   const oficina = (id: number) => oficinas.find((o) => o.id === id)?.nombre ?? "—";
-
-  const delDia = movimientos.filter((m) => m.fecha === hoy);
   const recientes = [...movimientos]
     .sort((a, b) => (a.fecha === b.fecha ? b.orden - a.orden : a.fecha < b.fecha ? 1 : -1))
-    .slice(0, 10);
-
-  // Monedas que efectivamente se movieron hoy: no se muestran columnas vacías.
+    .slice(0, 6);
   const monedasDelDia = MONEDAS.filter(
     (m) => resumen.ingresos[m] || resumen.egresos[m] || resumen.neto[m],
   );
-  const contrapartesDelDia = new Set(delDia.map((m) => m.contraparte_id).filter(Boolean)).size;
 
   return (
     <>
@@ -54,134 +64,158 @@ export default async function InicioPage() {
         titulo="Hoy"
         contexto={[
           fmtFechaLarga(hoy),
-          `${resumen.movimientos} ${resumen.movimientos === 1 ? "movimiento cargado" : "movimientos cargados"}`,
-          <Estado key="e" tono="pos">Saldos al día</Estado>,
+          operativo.ultimaCorrida
+            ? `conciliación actualizada ${desdeHace(operativo.ultimaCorrida.momento)}`
+            : "sin conciliar todavía",
         ]}
         acciones={
-          <Link href="/carga">
-            <Button variant="primary">
-              Cargar movimientos <IcoArrow className="w-4 h-4" />
-            </Button>
-          </Link>
+          <>
+            <Link href="/fullcarga">
+              <Button>Actualizar Fullcarga</Button>
+            </Link>
+            <Link href="/planillas/importar">
+              <Button variant="primary">
+                <IcoMas className="w-4 h-4" />
+                Importar planilla
+              </Button>
+            </Link>
+          </>
         }
       />
 
-      {/* ── Neto del día por moneda ───────────────────────────── */}
-      <Card className="mb-5">
-        <CardBar>
-          <span className="t-label">Movimiento del día</span>
-          <span className="ml-auto t-num text-[11.5px] text-ink-4">
-            {contrapartesDelDia} {contrapartesDelDia === 1 ? "contraparte" : "contrapartes"}
-          </span>
-        </CardBar>
+      {/* ── 1 · Conciliación ── */}
+      <div className="mb-7">
+        <HeroConciliacion
+          total={operativo.total}
+          conciliadas={operativo.conciliadas}
+          resueltas={operativo.resueltas}
+          pendientes={operativo.pendientes}
+          revision={operativo.revision}
+          errores={operativo.errores}
+          tasaAutomatica={operativo.tasaAutomatica}
+          masAntigua={operativo.masAntigua}
+        />
+      </div>
 
-        {monedasDelDia.length === 0 ? (
-          <Vacio
-            titulo="Todavía no se cargó nada hoy"
-            texto="Cuando cargues el primer movimiento vas a ver acá el neto del día por moneda."
-            accion={
-              <Link href="/carga">
-                <Button size="sm" variant="primary">Cargar movimientos</Button>
-              </Link>
-            }
-          />
+      {/* ── 2 · Lo que requiere una persona ── */}
+      <Seccion
+        titulo="Requiere tu atención"
+        nota={
+          requierenAtencion.length > 0
+            ? `${requierenAtencion.length} operaciones · ${
+                requierenAtencion.length > 6 ? "las 6 más antiguas" : "todas"
+              }`
+            : undefined
+        }
+        enlace={requierenAtencion.length > 0 ? "/conciliacion" : undefined}
+        className="mb-7"
+      >
+        <Bandeja operaciones={requierenAtencion} />
+      </Seccion>
+
+      {/* ── 3 · De dónde viene el trabajo ── */}
+      <Seccion titulo="Planillas recientes" enlace="/planillas" className="mb-7">
+        {planillas.length === 0 ? (
+          <Vacio titulo="Todavía no se importó ninguna planilla" compacto />
         ) : (
-          <div
-            className="grid divide-y divide-line md:divide-y-0 md:divide-x"
-            style={{ gridTemplateColumns: `repeat(${monedasDelDia.length}, minmax(0,1fr))` }}
-          >
-            {monedasDelDia.map((m) => {
-              const neto = resumen.neto[m] ?? 0;
-              const ing = resumen.ingresos[m] ?? 0;
-              const egr = resumen.egresos[m] ?? 0;
-              return (
-                <div key={m} className="px-4 py-4 min-w-0">
-                  <span className="t-label">Neto {m}</span>
-                  <div className="mt-1">
-                    {neto === 0 ? (
-                      <span className="t-num text-[26px] text-ink-4">—</span>
-                    ) : (
-                      <Monto
-                        valor={neto}
-                        moneda={m}
-                        conSigno
-                        tamano="xl"
-                        className={cx(
-                          "text-[26px] font-semibold",
-                          neto > 0 ? "text-pos" : "text-neg",
-                        )}
-                      />
-                    )}
-                  </div>
-
-                  <div className="mt-2.5 pt-2.5 border-t border-line-soft flex flex-col gap-1">
-                    <Renglon etiqueta="Ingresos" valor={ing} moneda={m} tono="pos" />
-                    <Renglon etiqueta="Pagos" valor={egr} moneda={m} tono="neg" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <TablaShell minWidth={780}>
+            <thead className="bg-raised border-b border-line">
+              <tr>
+                <Th>Cliente</Th>
+                <Th>Recibida</Th>
+                <Th derecha>Operaciones</Th>
+                <Th derecha>Enviado</Th>
+                <Th derecha>Acreditado</Th>
+                <Th>Estado</Th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line-soft">
+              {planillas.slice(0, 5).map((p) => {
+                const e = ESTADO_PLANILLA[p.estado];
+                return (
+                  <tr key={p.id} className="hover:bg-raised transition-colors duration-150">
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <Link href={`/planillas/${p.id}`} className="text-ink font-medium hover:text-brand">
+                        {p.cliente.nombre}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-2.5 t-num text-ink-3 whitespace-nowrap">
+                      {fmtFecha(p.fecha)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right t-num text-ink-2">
+                      <span className="text-pos">{p.acreditadas}</span>
+                      <span className="text-ink-4"> / {p.operaciones}</span>
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <Monto valor={p.enviado} moneda="ARS" tamano="sm" className="text-ink" />
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <Monto valor={p.acreditado} moneda="ARS" tamano="sm" className="text-pos" />
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <Estado tono={e.tono}>{e.texto}</Estado>
+                        {p.listaParaCtaCte && <Badge tono="brand">cta cte</Badge>}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </TablaShell>
         )}
-      </Card>
+      </Seccion>
 
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_318px] gap-5 items-start">
-        {/* ── Actividad reciente ── */}
-        <Card>
-          <CardBar>
-            <span className="t-label">Actividad reciente</span>
-            <Link href="/carga" className="ml-auto text-[12.5px] text-brand hover:underline">
-              Ir a la carga
-            </Link>
-          </CardBar>
-
+      {/* ── 4 y 5 · El libro, después del trabajo ── */}
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-7 items-start">
+        <Seccion
+          titulo="Actividad reciente"
+          nota={fmtFecha(HOY_DEMO)}
+          enlace="/carga"
+          textoEnlace="Ir a la carga"
+        >
           {recientes.length === 0 ? (
-            <Vacio titulo="Sin actividad" texto="Todavía no hay movimientos cargados." />
+            <Vacio titulo="Sin movimientos cargados" compacto />
           ) : (
-            <TablaShell minWidth={620}>
-              <thead>
-                <tr className="border-b border-line bg-raised">
+            <TablaShell minWidth={560}>
+              <thead className="bg-raised border-b border-line">
+                <tr>
                   <Th>Fecha</Th>
                   <Th>Contraparte</Th>
                   <Th>Detalle</Th>
                   <Th derecha>Impacto</Th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-line-soft">
                 {recientes.map((m) => {
                   const impacta = CATEGORIAS_QUE_IMPACTAN.has(m.categoria);
                   const imp = impactoPorMoneda(m.partidas);
                   return (
-                    <tr key={m.id} className="border-b border-line-soft last:border-0 hover:bg-raised group">
+                    <tr key={m.id} className="hover:bg-raised transition-colors duration-150 group">
                       <td className="px-4 py-2.5 t-num text-[12px] text-ink-3 whitespace-nowrap">
                         {fmtFecha(m.fecha)}
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap">
                         {m.contraparte_id ? (
                           <Link href={`/cuentas/${m.contraparte_id}`}
-                                className="text-[13.5px] text-ink font-medium group-hover:text-brand">
+                                className="text-[13px] text-ink group-hover:text-brand">
                             {nombre(m.contraparte_id)}
                           </Link>
-                        ) : (
-                          <SinValor />
-                        )}
+                        ) : <SinValor />}
                       </td>
-                      <td className="px-4 py-2.5 text-[13.5px] text-ink-2">
+                      <td className="px-4 py-2.5 text-[13px] text-ink-2 truncate max-w-[220px]">
                         {m.concepto}
                         <span className="ml-2 t-num text-[10.5px] text-ink-4">
                           {oficina(m.oficina_id)}
                         </span>
-                        {!impacta && (
-                          <span className="ml-2"><Badge>{ETIQUETA_CATEGORIA[m.categoria]}</Badge></span>
-                        )}
                       </td>
                       <td className="px-4 py-2.5 text-right whitespace-nowrap">
                         {!impacta ? (
-                          <span className="t-num text-[11px] text-ink-4">no impacta</span>
+                          <span className="text-[11px] text-ink-4">no impacta</span>
                         ) : (
                           <span className="inline-flex flex-col items-end gap-0.5">
                             {(Object.entries(imp) as [Moneda, number][]).map(([mon, v]) => (
-                              <Monto key={mon} valor={v} moneda={mon} conSigno
+                              <Monto key={mon} valor={v} moneda={mon} conSigno tamano="sm"
                                      className={cx("text-[12.5px]", v < 0 ? "text-neg" : "text-pos")} />
                             ))}
                           </span>
@@ -193,155 +227,37 @@ export default async function InicioPage() {
               </tbody>
             </TablaShell>
           )}
+        </Seccion>
 
-          <CardFoot>
-            <span className="t-num text-[12px] text-ink-2">
-              Últimos {recientes.length} de {movimientos.length}
-            </span>
-            <span className="ml-auto t-secondary">
-              El saldo de cada cuenta se recalcula al consultarlo
-            </span>
-          </CardFoot>
-        </Card>
-
-        <div className="flex flex-col gap-5">
-          {/* ── Requiere atención ── */}
-          <Card>
-            <CardBar>
-              <span className="t-label">Requiere atención</span>
-            </CardBar>
-            <ul className="divide-y divide-line-soft">
-              <Item
-                Icon={IcoCheque}
-                etiqueta="Cheques cargados hoy"
-                valor={resumen.chequesDelDia}
-                nota="Impactan la cuenta en su fecha de cobro"
-              />
-              <Item
-                Icon={IcoBars}
-                etiqueta="Movimientos sin impacto"
-                valor={resumen.sinImpacto}
-                nota="Compras, ventas e impuestos, por definición"
-              />
-              <Item Icon={IcoShield} etiqueta="Celdas con error de tipo" valor={0} bien
-                    nota="La base rechaza un texto en una columna de importe" />
-              <Item Icon={IcoPeople} etiqueta="Contrapartes duplicadas" valor={0} bien
-                    nota="Unicidad garantizada por la base, no por convención" />
-            </ul>
-          </Card>
-
-          {/* ── Accesos ── */}
-          <Card>
-            <CardBar>
-              <span className="t-label">Ir a</span>
-            </CardBar>
-            <ul className="divide-y divide-line-soft">
-              <Acceso href="/carga" Icon={IcoGrid} titulo="Cargar movimientos"
-                      texto="La grilla del día, con pegado desde Excel" />
-              <Acceso href="/cuentas" Icon={IcoPeople} titulo="Ver cuentas"
-                      texto="Saldo por contraparte y por moneda" />
-              <Acceso href="/balance" Icon={IcoBars} titulo="Ver balance"
-                      texto="Totales por moneda y exportación" />
-            </ul>
-          </Card>
-        </div>
+        <Seccion titulo="Estado financiero" nota={fmtFecha(HOY_DEMO)} enlace="/balance" textoEnlace="Ver balance">
+          {monedasDelDia.length === 0 ? (
+            <Vacio titulo="Sin movimiento hoy" compacto />
+          ) : (
+            <div className="divide-y divide-line-soft">
+              {monedasDelDia.map((m) => {
+                const neto = resumen.neto[m] ?? 0;
+                return (
+                  <div key={m} className="px-4 py-3 flex items-baseline justify-between gap-3">
+                    <span className="t-metrica">{m}</span>
+                    <span className="text-right">
+                      <Monto
+                        valor={neto}
+                        moneda={m}
+                        conSigno
+                        className={cx("text-[15px] font-semibold", neto > 0 ? "text-pos" : neto < 0 ? "text-neg" : "text-ink-4")}
+                      />
+                      <span className="block mt-0.5 text-[11px] text-ink-4">
+                        {(resumen.ingresos[m] ?? 0) > 0 && `+${Math.round((resumen.ingresos[m] ?? 0) / 1000)}k`}
+                        {(resumen.egresos[m] ?? 0) < 0 && ` ${Math.round((resumen.egresos[m] ?? 0) / 1000)}k`}
+                      </span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Seccion>
       </div>
     </>
   );
 }
-
-/** Renglón de apoyo debajo del neto: ingresos y pagos del día. */
-function Renglon({
-  etiqueta,
-  valor,
-  moneda,
-  tono,
-}: {
-  etiqueta: string;
-  valor: number;
-  moneda: Moneda;
-  tono: "pos" | "neg";
-}) {
-  return (
-    <span className="flex items-baseline justify-between gap-2">
-      <span className="text-[11.5px] text-ink-3">{etiqueta}</span>
-      {valor === 0 ? (
-        <SinValor className="text-[12px]" />
-      ) : (
-        <Monto
-          valor={valor}
-          moneda={moneda}
-          tamano="sm"
-          className={cx("text-[12.5px]", tono === "pos" ? "text-pos" : "text-neg")}
-        />
-      )}
-    </span>
-  );
-}
-
-function Item({
-  Icon,
-  etiqueta,
-  valor,
-  nota,
-  bien,
-}: {
-  Icon: (p: { className?: string }) => React.ReactNode;
-  etiqueta: string;
-  valor: number;
-  nota?: string;
-  bien?: boolean;
-}) {
-  const enCero = valor === 0;
-  return (
-    <li className="px-4 py-3 flex items-start gap-3">
-      <span
-        className={cx(
-          "w-7 h-7 rounded-lg grid place-items-center flex-none mt-px",
-          bien && enCero ? "bg-pos-wash text-pos" : enCero ? "bg-line-soft text-ink-4" : "bg-brand-wash text-brand",
-        )}
-      >
-        <Icon className="w-[14px] h-[14px]" />
-      </span>
-      <span className="flex-1 min-w-0">
-        <span className="block text-[13px] text-ink-2">{etiqueta}</span>
-        {nota && <span className="block text-[11px] text-ink-4 mt-0.5">{nota}</span>}
-      </span>
-      <span className={cx(
-        "t-num text-[16px] font-semibold",
-        bien && enCero ? "text-pos" : enCero ? "text-ink-4" : "text-ink",
-      )}>
-        {valor}
-      </span>
-    </li>
-  );
-}
-
-function Acceso({
-  href,
-  Icon,
-  titulo,
-  texto,
-}: {
-  href: string;
-  Icon: (p: { className?: string }) => React.ReactNode;
-  titulo: string;
-  texto: string;
-}) {
-  return (
-    <li>
-      <Link href={href} className="flex items-center gap-3 px-4 py-3 hover:bg-raised group">
-        <span className="w-8 h-8 rounded-lg bg-brand-wash text-brand grid place-items-center flex-none">
-          <Icon className="w-[15px] h-[15px]" />
-        </span>
-        <span className="min-w-0">
-          <span className="block text-[13.5px] font-medium text-ink group-hover:text-brand">{titulo}</span>
-          <span className="block text-[11.5px] text-ink-4">{texto}</span>
-        </span>
-        <IcoArrow className="ml-auto w-4 h-4 text-ink-4 group-hover:text-brand flex-none" />
-      </Link>
-    </li>
-  );
-}
-
-export const dynamic = "force-dynamic";

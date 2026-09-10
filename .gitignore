@@ -49,3 +49,12 @@ next-env.d.ts
 
 # Reportes de conciliación (pueden contener datos reales)
 reconciliation/
+
+# Descargas del POC de Fullcarga (contienen datos reales de la cuenta)
+.tmp/
+
+# Muestras reales de archivos del cliente. Nunca se commitean.
+private_samples/
+
+# Estado local del MVP operativo. Nunca se commitea.
+.data/

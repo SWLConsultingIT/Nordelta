@@ -12,7 +12,14 @@
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:supabase": "vitest run --config vitest.supabase.config.mts",
-    "migrar:legacy": "tsx scripts/migrar-legacy.mts"
+    "migrar:legacy": "tsx scripts/migrar-legacy.mts",
+    "fullcarga:poc": "tsx scripts/fullcarga-poc.mts",
+    "fullcarga:parse": "tsx scripts/fullcarga-parse-poc.mts",
+    "fullcarga:multidia": "tsx scripts/fullcarga-multidia.mts",
+    "fullcarga:comparar": "tsx scripts/fullcarga-comparar.mts",
+    "conciliar": "tsx scripts/conciliar-poc.mts",
+    "ground-truth": "tsx scripts/ground-truth.mts",
+    "benchmark": "tsx scripts/benchmark-independiente.mts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

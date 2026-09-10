@@ -72,3 +72,27 @@ export const IcoCheque = ({ className }: P) =>
 
 export const IcoReloj = ({ className }: P) =>
   svg(<><circle cx="12" cy="12" r="8.2" /><path d="M12 7.6V12l3 2" /></>, className);
+
+/* ── Acreditaciones ── */
+
+/** Edificio: el cliente de NORD, distinto de la contraparte contable. */
+export const IcoCliente = ({ className }: P) =>
+  svg(
+    <>
+      <path d="M4 20.5h16" />
+      <path d="M6 20.5V5.5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v15" />
+      <path d="M15 9.5h2.5a1 1 0 0 1 1 1v10" />
+      <path d="M9 8.5h3M9 12h3M9 15.5h3" />
+    </>,
+    className,
+  );
+
+/** Planilla: el archivo que manda el cliente. */
+export const IcoPlanilla = ({ className }: P) =>
+  svg(
+    <>
+      <rect x="4.5" y="3.5" width="15" height="17" rx="2" />
+      <path d="M4.5 9h15M9.5 9v11.5" />
+    </>,
+    className,
+  );

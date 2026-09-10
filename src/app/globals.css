@@ -13,10 +13,10 @@
    ═════════════════════════════════════════════════════════════ */
 @theme {
   /* ── Superficies ── */
-  --color-ground:    #F4F6FB;  /* fondo de la aplicación */
+  --color-ground:    #F7F8FA;  /* fondo de la aplicación */
   --color-surface:   #FFFFFF;  /* tarjetas y tablas */
-  --color-raised:    #F8FAFD;  /* encabezados de tabla, barras */
-  --color-sunken:    #EFF3F9;  /* celdas calculadas, no editables */
+  --color-raised:    #FAFBFC;  /* encabezados de tabla, barras */
+  --color-sunken:    #F1F3F6;  /* celdas calculadas, no editables */
 
   /* ── Azul estructural (riel, superficies oscuras) ── */
   --color-navy:      #0A1930;
@@ -25,45 +25,46 @@
   --color-navy-4:    #24456E;
 
   /* ── Azul de acción ── */
-  --color-brand:     #1D5AD0;
-  --color-brand-hi:  #2C77F5;
-  --color-brand-lo:  #164AAE;
-  --color-brand-wash:#EAF1FE;
-  --color-brand-line:#C0D6F9;
+  --color-brand:     #2158B4;
+  --color-brand-hi:  #2E6FD4;
+  --color-brand-lo:  #1A4894;
+  --color-brand-wash:#EDF2FB;
+  --color-brand-line:#C7D8F0;
 
   /* ── Líneas ── */
-  --color-line:      #E2E8F1;
-  --color-line-soft: #EDF1F7;
-  --color-line-hard: #CFD9E7;
+  --color-line:      #E6E8EC;
+  --color-line-soft: #EFF1F4;
+  --color-line-hard: #D3D7DE;
 
   /* ── Tinta ── */
-  --color-ink:       #0B1727;
-  --color-ink-2:     #3E4F66;
-  --color-ink-3:     #71849C;
-  --color-ink-4:     #9BAABD;
+  --color-ink:       #131A24;
+  --color-ink-2:     #45505F;
+  --color-ink-3:     #74808F;
+  --color-ink-4:     #9BA4B0;
 
   --color-on-navy:   #F1F6FF;
   --color-on-navy-2: #90A8C8;
   --color-on-navy-3: #5A749A;
 
   /* ── Semánticos. Separados del azul a propósito. ── */
-  --color-pos:       #0C7550;
-  --color-pos-wash:  #E3F3EC;
-  --color-pos-line:  #A9DBC5;
-  --color-neg:       #B02318;
-  --color-neg-wash:  #FBEBE9;
-  --color-neg-line:  #F0C0BA;
-  --color-warn:      #9A6408;
-  --color-warn-wash: #FCF2E0;
-  --color-warn-line: #EBD3A0;
+  --color-pos:       #0F6B4A;
+  --color-pos-wash:  #E8F2ED;
+  --color-pos-line:  #B4D6C6;
+  --color-neg:       #A32F26;
+  --color-neg-wash:  #F8EDEB;
+  --color-neg-line:  #E8C6C1;
+  --color-warn:      #8A5E14;
+  --color-warn-hi:   #E7B25C;  /* warn legible sobre el navy del riel */
+  --color-warn-wash: #F8F1E3;
+  --color-warn-line: #E2D2AC;
 
   --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
 
   /* ── Elevación. Casi imperceptible: la jerarquía la hace el borde. ── */
   --shadow-e1: 0 1px 1px rgba(11,23,39,.04);
-  --shadow-e2: 0 1px 2px rgba(11,23,39,.05), 0 2px 8px -4px rgba(11,23,39,.06);
-  --shadow-e3: 0 2px 4px rgba(11,23,39,.05), 0 12px 28px -12px rgba(11,23,39,.14);
+  --shadow-e2: 0 1px 2px rgba(19,26,36,.04);
+  --shadow-e3: 0 1px 3px rgba(19,26,36,.06), 0 8px 20px -12px rgba(19,26,36,.10);
   --shadow-e4: 0 8px 16px -6px rgba(11,23,39,.10), 0 24px 56px -20px rgba(11,23,39,.22);
 }
 
@@ -105,6 +106,7 @@
     --color-neg-wash:  #2E1615;
     --color-neg-line:  #522A26;
     --color-warn:      #DBA24C;
+    --color-warn-hi:   #E7B25C;
     --color-warn-wash: #2A2010;
     --color-warn-line: #4A3A1C;
 
@@ -172,6 +174,30 @@
   line-height: 1.3;
 }
 
+/* Título de bloque dentro de una página. Reemplaza a la versalita
+   monoespaciada como encabezado de sección: en una pantalla con
+   ocho bloques, ocho rótulos en mayúsculas gritan todos a la vez y
+   ninguno se lee. */
+@utility t-bloque {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.006em;
+  line-height: 1.3;
+  color: var(--color-ink);
+}
+
+/* Versalita para el rótulo que acompaña a un número grande. Es el
+   único lugar donde el registro contable suma: identifica la
+   métrica sin competir con ella. */
+@utility t-metrica {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
 @utility t-body { font-size: 13.5px; line-height: 1.55; }
 
 @utility t-secondary {
@@ -192,11 +218,9 @@
 }
 
 @utility t-th {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  font-weight: 500;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 560;
+  letter-spacing: 0.002em;
   color: var(--color-ink-3);
   white-space: nowrap;
 }

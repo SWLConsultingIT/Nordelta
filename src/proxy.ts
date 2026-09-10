@@ -14,7 +14,33 @@ import { NextResponse, type NextRequest } from "next/server";
  * frontera son la seguridad por fila de Postgres y el `exigirSesion()` al
  * principio de cada Server Action.
  */
-const RUTAS_PROTEGIDAS = ["/inicio", "/carga", "/cuentas", "/balance", "/ajustes", "/auditoria"];
+/**
+ * Todo lo que vive detrás del ingreso.
+ *
+ * La lista tiene que crecer con cada ruta nueva de la aplicación, y por eso
+ * hay un test que la compara contra las carpetas de `app/(app)`: agregar una
+ * pantalla y olvidarse de protegerla es el error silencioso más fácil de
+ * cometer acá.
+ */
+const RUTAS_PROTEGIDAS = [
+  "/inicio",
+  // Operación
+  "/conciliacion",
+  "/planillas",
+  "/clientes",
+  "/fullcarga",
+  // Finanzas
+  "/carga",
+  "/cuentas",
+  "/balance",
+  // Control
+  "/ajustes",
+  "/auditoria",
+  // Endpoints que devuelven datos o archivos
+  "/api",
+];
+
+export const RUTAS_PROTEGIDAS_TEST = RUTAS_PROTEGIDAS;
 
 export async function proxy(request: NextRequest) {
   const configurado = Boolean(

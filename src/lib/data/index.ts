@@ -26,9 +26,26 @@ export const usaSupabase = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 );
 
-/** En modo demostración se habilitan cosas que en producción no existen,
- *  como el botón de restablecer los datos. */
-export const esDemo = !usaSupabase;
+/**
+ * Modo demostración.
+ *
+ * Una sola variable lo gobierna —`DATA_MODE`— y la distinción que importa
+ * no es *dónde* corre sino *si alguien lo pidió*:
+ *
+ *   · **pedido a propósito** (`DATA_MODE=demo`): vale en cualquier lado,
+ *     también en producción. Es lo que permite mostrar el producto
+ *     hosteado antes de tener base, con el cartel puesto.
+ *   · **deducido** (no hay Supabase): vale solo fuera de producción.
+ *
+ * Esa segunda mitad es la que importa y es la que antes estaba mal: si el
+ * modo se dedujera en producción, una variable de entorno mal cargada
+ * convertiría un despliegue real en una demostración pública con sesión
+ * ficticia, **sin que nada fallara**. Un despliegue roto tiene que
+ * romperse ruidosamente, no degradarse a algo que parece funcionar.
+ */
+export const esDemo =
+  process.env.DATA_MODE === "demo" ||
+  (process.env.NODE_ENV !== "production" && !usaSupabase);
 
 /** Envoltura común: traduce cualquier fallo del almacén a un error de dominio. */
 async function consultar<T>(descripcion: string, fn: () => Promise<T> | T): Promise<T> {

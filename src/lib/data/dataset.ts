@@ -1,6 +1,7 @@
 import type {
   Categoria, Contraparte, EntradaAuditoria, MedioPago, Moneda, Movimiento, Oficina, Partida,
 } from "../domain/types";
+import { hoyISO } from "../format";
 
 /**
  * Dataset de demostración.
@@ -145,8 +146,25 @@ function diasHabiles(hasta: string, cantidad: number): string[] {
   return dias.reverse();
 }
 
-/** Última fecha del dataset. Fija, para que la demo sea reproducible. */
-export const HOY_DEMO = "2026-09-03";
+/**
+ * Última fecha del dataset financiero.
+ *
+ * Es **el último día hábil hasta hoy**, no una fecha fija. Antes estaba
+ * clavada, y el resultado era que la portada decía «Hoy, 3 de septiembre»
+ * mientras la conciliación mostraba el 10: dos fechas distintas en la
+ * misma pantalla, que en una herramienta de dinero se lee como un error.
+ *
+ * Que sea el último día hábil y no el día calendario mantiene la
+ * invariante del dataset —la última fecha generada siempre existe— también
+ * cuando la demostración se abre un sábado.
+ */
+function ultimoDiaHabil(desde = hoyISO()): string {
+  const d = new Date(desde + "T12:00:00Z");
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+export const HOY_DEMO = ultimoDiaHabil();
 const DIAS = diasHabiles(HOY_DEMO, 30);
 
 /* ── Generación ───────────────────────────────────────────── */
