@@ -6,6 +6,7 @@ import {
 import { IcoMas } from "@/components/ui/icons";
 import { HeroConciliacion } from "@/components/operaciones/Banda";
 import { Bandeja } from "@/components/operaciones/Bandeja";
+import { BotonActualizar } from "@/components/operaciones/BotonActualizar";
 import { Seccion } from "@/components/operaciones/Seccion";
 import { ESTADO_PLANILLA } from "../planillas/page";
 import { getOficinas, getResumenDelDia, getTodosLosMovimientos, getContrapartes } from "@/lib/data";
@@ -70,9 +71,7 @@ export default async function InicioPage() {
         ]}
         acciones={
           <>
-            <Link href="/fullcarga">
-              <Button>Actualizar Fullcarga</Button>
-            </Link>
+            <BotonActualizar />
             <Link href="/planillas/importar">
               <Button variant="primary">
                 <IcoMas className="w-4 h-4" />

@@ -122,16 +122,30 @@ export function Consola({
     iniciar(async () => {
       const r = await accionActualizar();
       if (!r.ok) return avisar(r.mensaje, { tono: "error" });
-      const { nuevasAcreditadas, pendientesAlCierre, porMapeo } = r.datos;
-      avisar(
+
+      const { corrida, fullcarga, acreditacionesNuevas } = r.datos;
+      const { nuevasAcreditadas, pendientesAlCierre, porMapeo } = corrida;
+
+      // El aviso cuenta lo que pasó en el orden en que le importa a quien
+      // concilia: primero la plata que se acreditó, después el estado de
+      // la integración.
+      const titulo =
         nuevasAcreditadas > 0
           ? `${nuevasAcreditadas} ${nuevasAcreditadas === 1 ? "operación encontró" : "operaciones encontraron"} acreditación`
-          : "Sin novedades: nada nuevo acreditó",
-        {
-          tono: nuevasAcreditadas > 0 ? "ok" : "info",
-          detalle: `${pendientesAlCierre} siguen pendientes${porMapeo > 0 ? ` · ${porMapeo} por identidad confirmada` : ""}`,
-        },
-      );
+          : fullcarga === "FALLO"
+            ? "Se concilió con la información que ya había"
+            : "Sin novedades";
+
+      const partes = [`${pendientesAlCierre} siguen pendientes`];
+      if (porMapeo > 0) partes.push(`${porMapeo} por identidades que confirmaste`);
+      if (fullcarga === "ACTUALIZADO") partes.push(`${acreditacionesNuevas} registros nuevos de Fullcarga`);
+      if (fullcarga === "SIN_CREDENCIALES") partes.push("Fullcarga no está conectado");
+      if (fullcarga === "FALLO") partes.push("Fullcarga no respondió");
+
+      avisar(titulo, {
+        tono: nuevasAcreditadas > 0 ? "ok" : fullcarga === "FALLO" ? "error" : "info",
+        detalle: partes.join(" · "),
+      });
     });
 
   const resolver = (decision: Decision, acreditacionId: string | null, aprender: boolean) => {
