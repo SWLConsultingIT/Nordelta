@@ -40,7 +40,10 @@ function fallo(descripcion: string, e: { message: string } | null): never {
 
 const ALIAS = /^[A-Z0-9][A-Z0-9-]{0,15}$/;
 
-export function repositorioClientes(sb: SupabaseClient): RepositorioClientes {
+export function repositorioClientes(
+  sb: SupabaseClient,
+  organizacionId?: string,
+): RepositorioClientes {
   return {
     async listar() {
       const { data, error } = await sb
@@ -75,12 +78,13 @@ export function repositorioClientes(sb: SupabaseClient): RepositorioClientes {
         );
       }
 
-      // `organizacion_id` no se manda: lo pone el valor por defecto de la
-      // columna a partir del perfil, y la política lo verifica. Aceptarlo
-      // del cliente sería aceptar que alguien escriba en otra organización.
+      // Desde la aplicación no se manda la organización: la pone el valor
+      // por defecto de la columna a partir del perfil, y la política lo
+      // verifica. Solo las tareas de administración —que corren sin
+      // sesión— la declaran.
       const { data, error } = await sb
         .from("clientes")
-        .insert({ nombre, alias })
+        .insert({ ...(organizacionId ? { organizacion_id: organizacionId } : {}), nombre, alias })
         .select("id, nombre, alias, activo")
         .single();
       if (error) {
@@ -132,7 +136,10 @@ export function repositorioClientes(sb: SupabaseClient): RepositorioClientes {
       }
       const { error } = await sb
         .from("cliente_emails")
-        .insert({ cliente_id: clienteId, email: limpio, principal });
+        .insert({
+          ...(organizacionId ? { organizacion_id: organizacionId } : {}),
+          cliente_id: clienteId, email: limpio, principal,
+        });
       if (error) {
         if (error.code === "23505") {
           throw new ErrorValidacion(

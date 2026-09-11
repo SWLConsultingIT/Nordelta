@@ -180,13 +180,15 @@ async function main() {
   paso("8 · Conciliando contra Postgres");
   const { repositoriosSupabase } = await import("../src/lib/data/supabase");
   const { correrConciliacion } = await import("../src/lib/servicios/conciliacion");
-  const { corrida } = await correrConciliacion(repositoriosSupabase(sb), "IMPORTACION_INFORME");
+  const { corrida } = await correrConciliacion(
+    repositoriosSupabase(sb, organizacionId), "IMPORTACION_INFORME",
+  );
   console.log(`  evaluadas ${corrida.operacionesEvaluadas} · acreditadas ${corrida.nuevasAcreditadas} ` +
     `· pendientes ${corrida.pendientesAlCierre} · ${corrida.duracionMs} ms`);
 
   /* ── Verificación ── */
   paso("9 · Lo que quedó en la base");
-  const repos = repositoriosSupabase(sb);
+  const repos = repositoriosSupabase(sb, organizacionId);
   const ops = await repos.transferencias.listar();
   const cuenta: Record<string, number> = {};
   for (const o of ops) cuenta[bucketDe(o.estado)] = (cuenta[bucketDe(o.estado)] ?? 0) + 1;
@@ -203,6 +205,11 @@ function* enLotes<T>(xs: readonly T[], n: number) {
 }
 
 main().catch((e) => {
-  console.error("\n\x1b[31mFalló la siembra\x1b[0m\n ", e instanceof Error ? e.message : e, "\n");
+  console.error("\n\x1b[31mFalló la siembra\x1b[0m\n ", e instanceof Error ? e.message : e);
+  // La causa real vive en el contexto del error de dominio. Sin ella el
+  // mensaje es «falló el guardado» y no se puede diagnosticar nada.
+  const ctx = (e as { contexto?: Record<string, unknown> })?.contexto;
+  if (ctx) console.error("  causa:", JSON.stringify(ctx));
+  console.error();
   process.exit(1);
 });

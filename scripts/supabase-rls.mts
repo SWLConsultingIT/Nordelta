@@ -157,11 +157,16 @@ async function main() {
 
     /* ── Borrado ── */
     console.log("\x1b[1mBorrado\x1b[0m");
-    const { error: borra, count } = await A.sb
-      .from("transferencias").delete({ count: "exact" }).eq("id", (transfA as { id: string }).id);
-    // Sin política de delete, la operación no encuentra ninguna fila.
-    registrar("nadie borra transferencias", !borra && count === 0,
-      count ? `borró ${count} filas` : "");
+    // Lo que importa no es cómo falla el borrado sino que la fila siga
+    // ahí. Hay dos barreras y cualquiera alcanza: sin grant de DELETE
+    // Postgres rechaza la operación; sin política, no encontraría ninguna
+    // fila que borrar. Afirmar una de las dos formas concretas ataría el
+    // test a un detalle en vez de a la garantía.
+    await A.sb.from("transferencias").delete().eq("id", (transfA as { id: string }).id);
+    const { data: sigue } = await A.sb
+      .from("transferencias").select("id").eq("id", (transfA as { id: string }).id);
+    registrar("nadie borra transferencias", (sigue ?? []).length === 1,
+      (sigue ?? []).length === 0 ? "la fila desapareció" : "");
 
     /* ── Resultado ── */
     console.log("\n\x1b[1mResultado\x1b[0m");

@@ -1,5 +1,6 @@
 import "server-only";
 import type { Repositorios } from "./puertos";
+import { faltantes, haySupabase } from "../supabase/config";
 import { repositoriosLocales } from "./local";
 
 /**
@@ -61,9 +62,13 @@ export function modoDatos(entorno: NodeJS.ProcessEnv = process.env): ModoDatos {
   }
 
   if (declarado === "supabase") {
-    if (!entorno.NEXT_PUBLIC_SUPABASE_URL || !entorno.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    // Los nombres los resuelve `supabase/config`, que acepta la
+    // convención nueva y la vieja. Comprobarlos acá por separado era
+    // garantizar que las dos se desincronizaran, y fue exactamente lo
+    // que pasó: la aplicación rechazaba una configuración válida.
+    if (!haySupabase(entorno)) {
       throw new ErrorConfiguracion(
-        "DATA_MODE=supabase pero faltan NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+        `DATA_MODE=supabase pero falta: ${faltantes(entorno).join(", ")}.`,
       );
     }
     return "supabase";

@@ -15,13 +15,21 @@ import {
  * organización, y de ahí sale el aislamiento. Nada acá recibe un
  * `organizacion_id` por parámetro, y es deliberado.
  */
-export function repositoriosSupabase(sb: SupabaseClient): Repositorios {
+export function repositoriosSupabase(
+  sb: SupabaseClient,
+  /**
+   * Solo para tareas de administración que corren sin sesión, donde el
+   * valor por defecto de la columna —`fn_org()`— es nulo. Desde la
+   * aplicación se omite: lo resuelve la base a partir del perfil.
+   */
+  organizacionId?: string,
+): Repositorios {
   return {
-    clientes: repositorioClientes(sb),
-    planillas: repositorioPlanillas(sb),
-    transferencias: repositorioTransferencias(sb),
-    informes: repositorioInformes(sb),
-    acreditaciones: repositorioAcreditaciones(sb),
-    conciliacion: repositorioConciliacion(sb),
+    clientes: repositorioClientes(sb, organizacionId),
+    planillas: repositorioPlanillas(sb, organizacionId),
+    transferencias: repositorioTransferencias(sb, organizacionId),
+    informes: repositorioInformes(sb, organizacionId),
+    acreditaciones: repositorioAcreditaciones(sb, organizacionId),
+    conciliacion: repositorioConciliacion(sb, organizacionId),
   };
 }

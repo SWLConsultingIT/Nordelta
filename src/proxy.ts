@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { clavePublicable, haySupabase, urlSupabase } from "./lib/supabase/config";
 
 /**
  * Refresco de sesión y control de acceso.
@@ -43,10 +44,10 @@ const RUTAS_PROTEGIDAS = [
 export const RUTAS_PROTEGIDAS_TEST = RUTAS_PROTEGIDAS;
 
 export async function proxy(request: NextRequest) {
-  const configurado = Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
-  if (!configurado) return NextResponse.next();
+  // Los nombres los resuelve `supabase/config`, que acepta la convención
+  // nueva y la vieja. Comprobarlos acá por separado hacía que el proxy
+  // creyera que Supabase no estaba configurado y **dejara pasar todo**.
+  if (!haySupabase()) return NextResponse.next();
 
   const protegida = RUTAS_PROTEGIDAS.some(
     (r) => request.nextUrl.pathname === r || request.nextUrl.pathname.startsWith(r + "/"),
@@ -56,8 +57,8 @@ export async function proxy(request: NextRequest) {
 
   const { createServerClient } = await import("@supabase/ssr");
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    urlSupabase()!,
+    clavePublicable()!,
     {
       cookies: {
         getAll: () => request.cookies.getAll(),

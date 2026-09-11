@@ -21,7 +21,8 @@
     "ground-truth": "tsx scripts/ground-truth.mts",
     "benchmark": "tsx scripts/benchmark-independiente.mts",
     "supabase:seed": "tsx --tsconfig tsconfig.scripts.json scripts/supabase-seed.mts",
-    "supabase:rls": "tsx --tsconfig tsconfig.scripts.json scripts/supabase-rls.mts"
+    "supabase:rls": "tsx --tsconfig tsconfig.scripts.json scripts/supabase-rls.mts",
+    "supabase:verificar": "tsx --tsconfig tsconfig.scripts.json scripts/supabase-verificar.mts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

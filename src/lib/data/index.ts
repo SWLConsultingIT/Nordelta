@@ -11,6 +11,7 @@ import { validarPartida } from "../domain/fx";
 import { validarNombreContraparte } from "../domain/contrapartes";
 import { esFechaISOValida } from "../format";
 import { almacen } from "./memoria";
+import { haySupabase } from "../supabase/config";
 
 /**
  * Capa de acceso a datos: el ÚNICO lugar que habla con el almacén.
@@ -22,9 +23,7 @@ import { almacen } from "./memoria";
  * Mientras no haya credenciales de Supabase se sirve el almacén en memoria,
  * ejercitando los mismos caminos de código.
  */
-export const usaSupabase = Boolean(
-  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-);
+export const usaSupabase = haySupabase();
 
 /**
  * Modo demostración.

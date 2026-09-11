@@ -27,13 +27,22 @@ import type {
   AcreditacionGuardada, Corrida, Evento, MapeoIdentidad, Operacion, Resolucion,
 } from "./tipos";
 
-/** Clave con la que el matcher identifica una acreditación. */
-const claveAcreditacion = (a: AcreditacionGuardada) => `${a.informeId}|${a.row}`;
-
-/** `AcreditacionGuardada` en la forma que espera el matcher. */
+/**
+ * `AcreditacionGuardada` en la forma que espera el matcher.
+ *
+ * `sourceFile` lleva **el identificador real** de la acreditación, no el
+ * del informe. El matcher identifica cada registro por `sourceFile|row`,
+ * y de ahí sale lo que después se guarda en la transferencia: si acá
+ * fuera el informe, se guardaría una clave inventada en lugar del id.
+ *
+ * Contra el almacén local eso funcionaba por casualidad —sus
+ * identificadores son justamente `informe|fila`— y contra Postgres la
+ * clave foránea lo rechaza. Es el tipo de diferencia que las dos
+ * implementaciones tienen que no tener.
+ */
 function aAcreditacion(a: AcreditacionGuardada): Acreditacion {
   return {
-    sourceFile: a.informeId,
+    sourceFile: a.id,
     sheet: "",
     row: a.row,
     cuit: a.cuit,
@@ -113,7 +122,9 @@ function ultimaResolucionPorOperacion(
 export function reevaluar(entrada: EntradaEvaluacion): SalidaEvaluacion {
   const { operaciones, acreditaciones, mapeos, resoluciones, momento } = entrada;
 
-  const porClave = new Map(acreditaciones.map((a) => [claveAcreditacion(a), a]));
+  const porClave = new Map(acreditaciones.map((a) => [a.id, a]));
+  /** De la clave que devuelve el matcher al identificador real. */
+  const idReal = new Map(acreditaciones.map((a) => [`${a.id}|${a.row}`, a.id]));
   const resolucionDe = ultimaResolucionPorOperacion(resoluciones);
   const usosDeMapeo = new Map<string, number>();
 
@@ -230,8 +241,7 @@ export function reevaluar(entrada: EntradaEvaluacion): SalidaEvaluacion {
 
   /* ── 4 · Lo que deduce el matcher ────────────────────────── */
 
-  const disponibles = () =>
-    acreditaciones.filter((a) => !consumidas.has(claveAcreditacion(a)));
+  const disponibles = () => acreditaciones.filter((a) => !consumidas.has(a.id));
 
   // Dos pasadas: primero las operaciones sin descartes, después las que
   // tienen, cada una contra su propio pozo. Mezclarlas obligaría al matcher
@@ -250,7 +260,7 @@ export function reevaluar(entrada: EntradaEvaluacion): SalidaEvaluacion {
       const op = ops[r.transfer.sourceRow];
       const mapeoId = identificacionUsada.get(op.id)!.mapeoId;
       const elegida = r.acreditacion
-        ? `${r.acreditacion.sourceFile}|${r.acreditacion.row}`
+        ? idReal.get(`${r.acreditacion.sourceFile}|${r.acreditacion.row}`) ?? null
         : null;
       if (elegida) consumidas.add(elegida);
       if (elegida && mapeoId) usosDeMapeo.set(mapeoId, (usosDeMapeo.get(mapeoId) ?? 0) + 1);
@@ -260,7 +270,9 @@ export function reevaluar(entrada: EntradaEvaluacion): SalidaEvaluacion {
         estado: r.estado,
         motivo: r.motivo,
         acreditacionId: elegida,
-        candidatoIds: r.candidatos.map((c) => `${c.sourceFile}|${c.row}`),
+        candidatoIds: r.candidatos
+          .map((c) => idReal.get(`${c.sourceFile}|${c.row}`))
+          .filter((id): id is string => id !== undefined),
         duplicadoDe: r.duplicadoDe,
         automatico: r.automatico,
         viaMapeo: Boolean(elegida && mapeoId),
@@ -287,7 +299,7 @@ export function reevaluar(entrada: EntradaEvaluacion): SalidaEvaluacion {
 
   for (const op of conDescartes) {
     const descartadas = rechazadas.get(op.id)!;
-    aplicar([op], disponibles().filter((a) => !descartadas.has(claveAcreditacion(a))));
+    aplicar([op], disponibles().filter((a) => !descartadas.has(a.id)));
   }
 
   /* ── 5 · Resultado ───────────────────────────────────────── */

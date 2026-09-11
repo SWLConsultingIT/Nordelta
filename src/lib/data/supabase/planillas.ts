@@ -42,7 +42,10 @@ function fallo(descripcion: string, e: { message: string } | null): never {
   throw new ErrorDatos(`Falló ${descripcion}`, { causa: e?.message ?? "desconocido" });
 }
 
-export function repositorioPlanillas(sb: SupabaseClient): RepositorioPlanillas {
+export function repositorioPlanillas(
+  sb: SupabaseClient,
+  organizacionId?: string,
+): RepositorioPlanillas {
   return {
     async listar(clienteId) {
       let q = sb.from("planillas").select(CAMPOS).order("fecha", { ascending: false });
@@ -71,6 +74,7 @@ export function repositorioPlanillas(sb: SupabaseClient): RepositorioPlanillas {
       const { data, error } = await sb
         .from("planillas")
         .insert({
+          ...(organizacionId ? { organizacion_id: organizacionId } : {}),
           cliente_id: datos.clienteId,
           archivo: datos.archivo.trim(),
           fecha: datos.fecha,

@@ -24,7 +24,17 @@ import type {
  * seguridad por fila y las claves foráneas compuestas. Si dependiera de que
  * cada consulta se acuerde de filtrar, alcanzaría un olvido para filtrar
  * datos de otro inquilino.
+ *
+ * `organizacionId` es opcional y existe para **un solo caso**: las tareas
+ * de administración que corren con la clave secreta, donde no hay sesión y
+ * por lo tanto el valor por defecto de la columna —`fn_org()`— es nulo.
+ * Una herramienta que escribe en nombre de una organización tiene que
+ * decir cuál; deducirlo sería adivinar. Desde la aplicación se omite y lo
+ * resuelve la base a partir del perfil.
  */
+
+/** Columna de organización, solo cuando quien escribe la declara. */
+const conOrg = (id?: string) => (id ? { organizacion_id: id } : {});
 
 const aPesos = (centavos: number) => centavos / 100;
 const aCentavos = (pesos: number) => Math.round(pesos * 100);
@@ -91,7 +101,7 @@ const aOperacion = (f: FilaTransferencia): Operacion => ({
   intentos: f.intentos,
 });
 
-export function repositorioTransferencias(sb: SupabaseClient): RepositorioTransferencias {
+export function repositorioTransferencias(sb: SupabaseClient, organizacionId?: string): RepositorioTransferencias {
   return {
     async listar(filtro: FiltroTransferencias = {}) {
       let q = sb.from("transferencias").select(CAMPOS_T);
@@ -125,6 +135,7 @@ export function repositorioTransferencias(sb: SupabaseClient): RepositorioTransf
       const { data, error } = await sb
         .from("transferencias")
         .insert(filas.map((f) => ({
+          ...conOrg(organizacionId),
           planilla_id: planillaId,
           cliente_id: (planilla as { cliente_id: string }).cliente_id,
           fila: f.fila,
@@ -144,12 +155,31 @@ export function repositorioTransferencias(sb: SupabaseClient): RepositorioTransf
 
     async guardarResultados(operaciones) {
       if (operaciones.length === 0) return;
-      // `upsert` sobre la clave primaria: el motor devuelve la fila
-      // completa, así que se escribe el resultado entero de una vez en
-      // lugar de N updates.
-      const { error } = await sb.from("transferencias").upsert(
-        operaciones.map((o) => ({
+
+      // Se lee la organización de las filas que se van a tocar, en lugar
+      // de deducirla. Dos motivos: el `upsert` de PostgREST es un INSERT
+      // con ON CONFLICT, así que necesita la columna aunque nunca inserte;
+      // y consultar primero **acota la escritura a lo que quien llama
+      // puede leer**, que es la garantía que da la seguridad por fila.
+      // La consulta va en lotes: PostgREST pone el filtro `in` en la
+      // cadena de la URL, y quinientos identificadores no entran. El
+      // síntoma es un «fetch failed» que no dice nada.
+      const ids = operaciones.map((o) => o.id);
+      const orgDe = new Map<string, string>();
+      for (let i = 0; i < ids.length; i += 100) {
+        const { data, error } = await sb
+          .from("transferencias").select("id, organizacion_id").in("id", ids.slice(i, i + 100));
+        if (error) fallo("la consulta previa al guardado", error);
+        for (const f of data as unknown as { id: string; organizacion_id: string }[]) {
+          orgDe.set(f.id, f.organizacion_id);
+        }
+      }
+
+      const filas = operaciones
+        .filter((o) => orgDe.has(o.id))
+        .map((o) => ({
           id: o.id,
+          organizacion_id: orgDe.get(o.id)!,
           planilla_id: o.planillaId,
           cliente_id: o.clienteId,
           fila: o.fila,
@@ -171,10 +201,17 @@ export function repositorioTransferencias(sb: SupabaseClient): RepositorioTransf
           acreditada_el: o.fechaAcreditacion,
           evaluada_en: o.evaluadaEn,
           intentos: o.intentos,
-        })),
-        { onConflict: "id" },
-      );
-      if (error) fallo("el guardado de los resultados de la conciliación", error);
+        }));
+      if (filas.length === 0) return;
+
+      // En lotes: una corrida puede tocar cientos de filas y un cuerpo de
+      // varios megabytes es la forma más simple de que la petición falle
+      // por razones que no tienen nada que ver con los datos.
+      for (let i = 0; i < filas.length; i += 200) {
+        const { error } = await sb
+          .from("transferencias").upsert(filas.slice(i, i + 200), { onConflict: "id" });
+        if (error) fallo("el guardado de los resultados de la conciliación", error);
+      }
     },
   };
 }
@@ -201,7 +238,7 @@ const aInforme = (f: FilaInforme): Informe => ({
   storagePath: f.storage_path,
 });
 
-export function repositorioInformes(sb: SupabaseClient): RepositorioInformes {
+export function repositorioInformes(sb: SupabaseClient, organizacionId?: string): RepositorioInformes {
   return {
     async listar() {
       const { data, error } = await sb
@@ -220,6 +257,7 @@ export function repositorioInformes(sb: SupabaseClient): RepositorioInformes {
       const { data, error } = await sb
         .from("informes_fullcarga")
         .insert({
+          ...conOrg(organizacionId),
           archivo: datos.archivo,
           desde: datos.desde,
           hasta: datos.hasta,
@@ -257,7 +295,7 @@ const aAcreditacion = (f: FilaAcreditacion): AcreditacionGuardada => ({
   row: f.fila_origen,
 });
 
-export function repositorioAcreditaciones(sb: SupabaseClient): RepositorioAcreditaciones {
+export function repositorioAcreditaciones(sb: SupabaseClient, organizacionId?: string): RepositorioAcreditaciones {
   return {
     async listar() {
       const { data, error } = await sb.from("acreditaciones").select(CAMPOS_A);
@@ -290,6 +328,7 @@ export function repositorioAcreditaciones(sb: SupabaseClient): RepositorioAcredi
         if (conocidas.has(huella)) continue;
         conocidas.add(huella);
         aInsertar.push({
+          ...conOrg(organizacionId),
           informe_id: informeId,
           fila_origen: f.row,
           cuit: f.cuit,
@@ -387,7 +426,7 @@ const aEvento = (f: FilaEvento): Evento => ({
   origen: f.origen,
 });
 
-export function repositorioConciliacion(sb: SupabaseClient): RepositorioConciliacion {
+export function repositorioConciliacion(sb: SupabaseClient, organizacionId?: string): RepositorioConciliacion {
   return {
     async resoluciones() {
       const { data, error } = await sb
@@ -402,6 +441,7 @@ export function repositorioConciliacion(sb: SupabaseClient): RepositorioConcilia
       const { data, error } = await sb
         .from("resoluciones")
         .insert({
+          ...conOrg(organizacionId),
           transferencia_id: r.operacionId,
           decision: r.decision,
           origen: r.origen,
@@ -446,6 +486,7 @@ export function repositorioConciliacion(sb: SupabaseClient): RepositorioConcilia
       const { data, error } = await sb
         .from("mapeos_identidad")
         .insert({
+          ...conOrg(organizacionId),
           cliente_id: m.clienteId,
           identificacion: m.identificacion,
           cuit: m.cuit,
@@ -478,6 +519,7 @@ export function repositorioConciliacion(sb: SupabaseClient): RepositorioConcilia
       const { data, error } = await sb
         .from("conciliacion_corridas")
         .insert({
+          ...conOrg(organizacionId),
           disparador: c.disparador,
           evaluadas: c.operacionesEvaluadas,
           nuevas_acreditadas: c.nuevasAcreditadas,
@@ -515,6 +557,7 @@ export function repositorioConciliacion(sb: SupabaseClient): RepositorioConcilia
       if (nuevos.length === 0) return;
       const { error } = await sb.from("transferencia_eventos").insert(
         nuevos.map((e) => ({
+          ...conOrg(organizacionId),
           transferencia_id: e.operacionId,
           estado_previo: e.de,
           estado_nuevo: e.a,
