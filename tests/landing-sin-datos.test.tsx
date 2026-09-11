@@ -187,13 +187,13 @@ describe("lo que el preview realmente renderiza", () => {
     // La prueba más directa: se renderiza el componente y se mira el
     // texto resultante. Si algún día alguien le pasa datos, esto falla.
     const { renderToStaticMarkup } = await import("react-dom/server");
-    const { VistaPlataforma, ModulosPlataforma } = await import(
-      "../src/components/marketing/VistaPlataforma"
+    const { VentanaNord, DetalleOscuro } = await import(
+      "../src/components/marketing/VentanaNord"
     );
 
     for (const [nombre, Componente] of [
-      ["VistaPlataforma", VistaPlataforma],
-      ["ModulosPlataforma", ModulosPlataforma],
+      ["VentanaNord", VentanaNord],
+      ["DetalleOscuro", DetalleOscuro],
     ] as const) {
       const html = renderToStaticMarkup(<Componente />);
       const visible = html
