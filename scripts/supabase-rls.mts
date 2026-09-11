@@ -168,6 +168,46 @@ async function main() {
     registrar("nadie borra transferencias", (sigue ?? []).length === 1,
       (sigue ?? []).length === 0 ? "la fila desapareció" : "");
 
+    /* ── Almacenamiento ── */
+    console.log("\x1b[1mArchivos\x1b[0m");
+    const BUCKET = "originales";
+    // Un .xlsx sintético mínimo: lo que importa acá es la ruta, no el
+    // contenido. Nada de esto sale de un archivo real.
+    const contenido = new Blob([Buffer.from("PK\u0003\u0004prueba-de-aislamiento")]);
+    const rutaDe = (org: string) => `${org}/planillas/${SUFIJO}/prueba.xlsx`;
+
+    const subirA = async (ctx: typeof A, org: string) => {
+      const { error } = await ctx.sb.storage
+        .from(BUCKET).upload(rutaDe(org), contenido, { upsert: true });
+      return error;
+    };
+
+    registrar("A escribe en su propia carpeta", !(await subirA(A, A.orgId)));
+    registrar("B escribe en su propia carpeta", !(await subirA(B, B.orgId)));
+    registrar("A NO puede escribir en la carpeta de B", Boolean(await subirA(A, B.orgId)),
+      "");
+
+    const { data: leeProp } = await A.sb.storage.from(BUCKET).download(rutaDe(A.orgId));
+    registrar("A lee su propio archivo", Boolean(leeProp));
+
+    const { data: leeAjeno, error: errAjeno } = await A.sb.storage
+      .from(BUCKET).download(rutaDe(B.orgId));
+    registrar("A NO puede leer el archivo de B", !leeAjeno && Boolean(errAjeno),
+      leeAjeno ? "FILTRACIÓN: leyó el archivo de otra organización" : "");
+
+    // Listar la carpeta ajena tampoco puede revelar qué hay adentro.
+    const { data: lista } = await A.sb.storage.from(BUCKET).list(`${B.orgId}/planillas`);
+    registrar("A NO ve el contenido de la carpeta de B", (lista ?? []).length === 0,
+      (lista ?? []).length > 0 ? "FILTRACIÓN: listó archivos ajenos" : "");
+
+    // El bucket no puede ser público: si lo fuera, la ruta adivinada
+    // alcanzaría para bajar el archivo sin sesión.
+    const publica = await fetch(
+      `${url}/storage/v1/object/public/${BUCKET}/${rutaDe(A.orgId)}`,
+    );
+    registrar("sin sesión no se baja nada", !publica.ok,
+      publica.ok ? "FILTRACIÓN: el bucket es público" : "");
+
     /* ── Resultado ── */
     console.log("\n\x1b[1mResultado\x1b[0m");
     for (const c of casos) {
@@ -189,6 +229,12 @@ async function main() {
     ]) {
       for (const orgId of creados.orgs) {
         await admin.from(tabla).delete().eq("organizacion_id", orgId);
+      }
+    }
+    for (const orgId of creados.orgs) {
+      const { data } = await admin.storage.from("originales").list(`${orgId}/planillas/${SUFIJO}`);
+      for (const f of data ?? []) {
+        await admin.storage.from("originales").remove([`${orgId}/planillas/${SUFIJO}/${f.name}`]);
       }
     }
     for (const userId of creados.usuarios) await admin.auth.admin.deleteUser(userId);

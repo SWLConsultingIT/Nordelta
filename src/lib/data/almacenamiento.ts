@@ -25,8 +25,29 @@ export interface ArchivoGuardado {
   bytes: number;
 }
 
+/** Los dos tipos de original que se conservan. */
+export type Sector = "planillas" | "fullcarga";
+
 export interface AlmacenArchivos {
-  guardar(carpeta: string, nombre: string, datos: Buffer): Promise<ArchivoGuardado>;
+  /**
+   * Guarda un original.
+   *
+   * La ruta **la arma el almacén**, no quien llama:
+   *
+   *     {organizacion}/{sector}/{huella}/{nombre saneado}
+   *
+   * Que el prefijo de organización sea estructural y no un argumento es
+   * deliberado: así ningún camino del código puede olvidarse de ponerlo,
+   * y la política de almacenamiento —que compara el primer segmento
+   * contra la organización de quien consulta— siempre tiene qué comparar.
+   *
+   * La huella va en la ruta en lugar del identificador de la planilla o
+   * del informe porque resuelve sola la idempotencia: el mismo archivo
+   * subido dos veces cae en el mismo lugar y no se duplica. La
+   * trazabilidad va en el otro sentido —de la fila a la ruta— y para eso
+   * la fila guarda `storage_path` y `sha256`.
+   */
+  guardar(sector: Sector, nombre: string, datos: Buffer): Promise<ArchivoGuardado>;
   leer(ruta: string): Promise<Buffer | null>;
 }
 
@@ -116,14 +137,16 @@ export const sha256 = (datos: Buffer) => createHash("sha256").update(datos).dige
 
 const RAIZ = () => join(process.env.NORD_DATA_DIR ?? join(process.cwd(), ".data"), "archivos");
 
-function almacenLocal(): AlmacenArchivos {
+/** La misma forma de ruta en los dos almacenes, para que no diverjan. */
+export function rutaDe(organizacionId: string, sector: Sector, nombre: string, huella: string) {
+  return `${organizacionId}/${sector}/${huella}/${nombreSeguro(nombre)}`;
+}
+
+function almacenLocal(organizacionId: string): AlmacenArchivos {
   return {
-    async guardar(carpeta, nombre, datos) {
+    async guardar(sector, nombre, datos) {
       const huella = sha256(datos);
-      // El nombre incluye la huella: dos archivos distintos con el mismo
-      // nombre no se pisan, y el mismo archivo subido dos veces cae en la
-      // misma ruta.
-      const ruta = join(carpeta, `${huella.slice(0, 12)}-${nombreSeguro(nombre)}`);
+      const ruta = rutaDe(organizacionId, sector, nombre, huella);
       const destino = join(RAIZ(), ruta);
       mkdirSync(dirname(destino), { recursive: true });
       writeFileSync(destino, datos);
@@ -142,13 +165,13 @@ function almacenLocal(): AlmacenArchivos {
 
 const BUCKET = "originales";
 
-async function almacenSupabase(): Promise<AlmacenArchivos> {
+async function almacenSupabase(organizacionId: string): Promise<AlmacenArchivos> {
   const { createClient } = await import("../supabase/server");
   const sb = await createClient();
   return {
-    async guardar(carpeta, nombre, datos) {
+    async guardar(sector, nombre, datos) {
       const huella = sha256(datos);
-      const ruta = `${carpeta}/${huella.slice(0, 12)}-${nombreSeguro(nombre)}`;
+      const ruta = rutaDe(organizacionId, sector, nombre, huella);
       const { error } = await sb.storage
         .from(BUCKET)
         .upload(ruta, datos, { upsert: true, contentType: "application/octet-stream" });
@@ -163,6 +186,30 @@ async function almacenSupabase(): Promise<AlmacenArchivos> {
   };
 }
 
+/**
+ * El almacén de la organización de quien está operando.
+ *
+ * Resuelve la organización por su cuenta en lugar de recibirla: es lo que
+ * hace que el aislamiento sea estructural. Sin sesión con organización no
+ * hay almacén, porque no habría prefijo que poner y todo terminaría en la
+ * misma carpeta.
+ */
 export async function almacenDeArchivos(): Promise<AlmacenArchivos> {
-  return modoDatos() === "supabase" ? almacenSupabase() : almacenLocal();
+  const supabase = modoDatos() === "supabase";
+  const { perfilActual } = await import("../auth");
+  const perfil = await perfilActual();
+  const organizacionId = perfil?.organizacion?.id;
+
+  if (!organizacionId) {
+    if (supabase) {
+      throw new ErrorValidacion(
+        "No se puede guardar el archivo: la sesión no tiene organización.",
+        "organizacion",
+      );
+    }
+    // Fuera de Supabase no hay inquilinos: una carpeta fija alcanza y
+    // mantiene la misma forma de ruta.
+    return almacenLocal("local");
+  }
+  return supabase ? almacenSupabase(organizacionId) : almacenLocal(organizacionId);
 }

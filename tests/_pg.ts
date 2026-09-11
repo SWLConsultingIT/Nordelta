@@ -12,8 +12,10 @@ const DIR = join(import.meta.dirname, "..", "supabase", "migrations");
  * TypeScript, que las restricciones rechazan lo que tienen que rechazar, y
  * que las vistas calculan el saldo y el cierre como el dominio.
  *
- * Lo que Supabase aporta y acá hay que emular: el esquema `auth`, la tabla
- * `auth.users` y `auth.uid()`.
+ * Lo que Supabase aporta y acá hay que emular: los esquemas `auth` y
+ * `storage`, la tabla `auth.users`, `auth.uid()` y `storage.foldername()`.
+ * Se emulan en lugar de saltear las migraciones que los usan, para que las
+ * políticas de archivos también queden cubiertas.
  */
 export async function pgConMigraciones(): Promise<PGlite> {
   const db = await PGlite.create();
@@ -34,6 +36,25 @@ export async function pgConMigraciones(): Promise<PGlite> {
     create or replace function auth.uid() returns uuid
     language sql stable as $$
       select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
+    $$;
+
+    -- Almacenamiento. Lo mínimo para que las políticas de archivos se
+    -- puedan crear y probar: la tabla de objetos y la función que parte
+    -- la ruta en segmentos, que es sobre la que se apoya el aislamiento.
+    create schema if not exists storage;
+    create table storage.objects (
+      id        uuid primary key default gen_random_uuid(),
+      bucket_id text not null,
+      name      text not null,
+      owner     uuid
+    );
+    alter table storage.objects enable row level security;
+
+    -- Devuelve los segmentos de carpeta, sin el nombre del archivo:
+    -- 'org/planillas/huella/x.xlsx' → {org,planillas,huella}
+    create or replace function storage.foldername(name text) returns text[]
+    language sql immutable as $$
+      select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1]
     $$;
   `);
 

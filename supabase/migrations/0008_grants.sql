@@ -55,7 +55,9 @@ grant select, insert, update on cliente_emails        to authenticated;
 grant select, insert, update on planillas             to authenticated;
 grant select, insert, update on transferencias        to authenticated;
 grant select, insert, update on mapeos_identidad      to authenticated;
-grant select, insert         on informes_fullcarga    to authenticated;
+-- UPDATE incluido: el recuento de acreditaciones del informe se escribe
+-- después de incorporarlas.
+grant select, insert, update on informes_fullcarga    to authenticated;
 grant select, insert         on acreditaciones        to authenticated;
 grant select, insert         on resoluciones          to authenticated;
 grant select, insert         on conciliacion_corridas to authenticated;

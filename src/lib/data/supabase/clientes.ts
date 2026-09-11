@@ -40,6 +40,22 @@ function fallo(descripcion: string, e: { message: string } | null): never {
 
 const ALIAS = /^[A-Z0-9][A-Z0-9-]{0,15}$/;
 
+/**
+ * Por qué todos los `insert` llevan `defaultToNull: false`.
+ *
+ * PostgREST arma la inserción con `json_populate_recordset`, y eso
+ * convierte **toda columna omitida en NULL**, no en su valor por defecto.
+ * El resultado era que `organizacion_id`, cuyo default es `fn_org()`,
+ * llegaba nula y la política de seguridad rechazaba la fila.
+ *
+ * La opción equivale a la cabecera `Prefer: missing=default`: lo que no
+ * se manda lo decide la base. Es justo lo que se quiere acá, porque
+ * significa que **la aplicación nunca declara a qué organización
+ * pertenece lo que escribe** —lo deduce el perfil de la sesión— y por lo
+ * tanto no hay nada que falsificar.
+ */
+const DEFECTOS = { defaultToNull: false } as const;
+
 export function repositorioClientes(
   sb: SupabaseClient,
   organizacionId?: string,
@@ -139,7 +155,7 @@ export function repositorioClientes(
         .insert({
           ...(organizacionId ? { organizacion_id: organizacionId } : {}),
           cliente_id: clienteId, email: limpio, principal,
-        });
+        }, DEFECTOS);
       if (error) {
         if (error.code === "23505") {
           throw new ErrorValidacion(

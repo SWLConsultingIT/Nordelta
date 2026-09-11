@@ -101,6 +101,22 @@ const aOperacion = (f: FilaTransferencia): Operacion => ({
   intentos: f.intentos,
 });
 
+/**
+ * Por qué todos los `insert` llevan `defaultToNull: false`.
+ *
+ * PostgREST arma la inserción con `json_populate_recordset`, y eso
+ * convierte **toda columna omitida en NULL**, no en su valor por defecto.
+ * El resultado era que `organizacion_id`, cuyo default es `fn_org()`,
+ * llegaba nula y la política de seguridad rechazaba la fila.
+ *
+ * La opción equivale a la cabecera `Prefer: missing=default`: lo que no
+ * se manda lo decide la base. Es justo lo que se quiere acá, porque
+ * significa que **la aplicación nunca declara a qué organización
+ * pertenece lo que escribe** —lo deduce el perfil de la sesión— y por lo
+ * tanto no hay nada que falsificar.
+ */
+const DEFECTOS = { defaultToNull: false } as const;
+
 export function repositorioTransferencias(sb: SupabaseClient, organizacionId?: string): RepositorioTransferencias {
   return {
     async listar(filtro: FiltroTransferencias = {}) {
@@ -147,7 +163,7 @@ export function repositorioTransferencias(sb: SupabaseClient, organizacionId?: s
           tipo_identificacion: f.tipoIdentificacion,
           importe_centavos: aCentavos(f.importe),
           numero_deposito: f.numeroDeposito,
-        })))
+        })), DEFECTOS)
         .select(CAMPOS_T);
       if (error) fallo("el alta de transferencias", error);
       return (data as unknown as FilaTransferencia[]).map(aOperacion);
@@ -264,7 +280,7 @@ export function repositorioInformes(sb: SupabaseClient, organizacionId?: string)
           origen: datos.origen,
           sha256: datos.sha256 ?? null,
           storage_path: datos.storagePath ?? null,
-        })
+        }, DEFECTOS)
         .select(CAMPOS_I)
         .single();
       if (error) fallo("el registro del informe", error);
@@ -340,7 +356,7 @@ export function repositorioAcreditaciones(sb: SupabaseClient, organizacionId?: s
       }
 
       if (aInsertar.length > 0) {
-        const { error } = await sb.from("acreditaciones").insert(aInsertar);
+        const { error } = await sb.from("acreditaciones").insert(aInsertar, DEFECTOS);
         if (error) fallo("la incorporación de acreditaciones", error);
       }
       const { error: e2 } = await sb
@@ -455,7 +471,7 @@ export function repositorioConciliacion(sb: SupabaseClient, organizacionId?: str
           // anotar a otro como autor de una decisión sobre plata sería un
           // problema de auditoría, no una comodidad.
           actor: r.actor,
-        })
+        }, DEFECTOS)
         .select("id, transferencia_id, decision, origen, acreditacion_id, estado_previo, motivo, mapeo_id, actor, decidido_en")
         .single();
       if (error) fallo("el registro de la resolución", error);
@@ -491,7 +507,7 @@ export function repositorioConciliacion(sb: SupabaseClient, organizacionId?: str
           identificacion: m.identificacion,
           cuit: m.cuit,
           confirmado_por: m.actor,
-        })
+        }, DEFECTOS)
         .select("id, cliente_id, identificacion, cuit, confirmado_por, confirmado_en, usos")
         .single();
       if (error) fallo("el registro de la identidad confirmada", error);
@@ -526,7 +542,7 @@ export function repositorioConciliacion(sb: SupabaseClient, organizacionId?: str
           por_mapeo: c.porMapeo,
           pendientes_al_cierre: c.pendientesAlCierre,
           duracion_ms: c.duracionMs ?? null,
-        })
+        }, DEFECTOS)
         .select("id, disparador, corrida_en, evaluadas, nuevas_acreditadas, por_mapeo, pendientes_al_cierre, duracion_ms")
         .single();
       if (error) fallo("el registro de la corrida", error);
@@ -565,6 +581,7 @@ export function repositorioConciliacion(sb: SupabaseClient, organizacionId?: str
           origen: e.origen,
           actor: e.actor === "sistema" ? null : e.actor,
         })),
+        DEFECTOS,
       );
       if (error) fallo("el registro del historial", error);
     },

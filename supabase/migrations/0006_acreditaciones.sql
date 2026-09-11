@@ -321,7 +321,7 @@ create index on mapeos_identidad (organizacion_id, identificacion);
 -- acreditación que alguien discute seis meses después.
 create table resoluciones (
   id               uuid primary key default gen_random_uuid(),
-  organizacion_id  uuid not null references organizaciones(id) on delete restrict,
+  organizacion_id  uuid not null default fn_org() references organizaciones(id) on delete restrict,
   transferencia_id uuid not null,
   decision         decision_resolucion not null,
   origen           origen_resolucion not null default 'HUMANA',
@@ -348,7 +348,7 @@ create index on resoluciones (organizacion_id, decidido_en desc);
 -- verdad importa sobre la cola: **si crece o si drena**.
 create table conciliacion_corridas (
   id                 uuid primary key default gen_random_uuid(),
-  organizacion_id    uuid not null references organizaciones(id) on delete restrict,
+  organizacion_id    uuid not null default fn_org() references organizaciones(id) on delete restrict,
   disparador         disparador_corrida not null,
   informe_id         uuid,
   corrida_en         timestamptz not null default now(),
@@ -375,7 +375,7 @@ create index on conciliacion_corridas (organizacion_id, corrida_en desc);
 -- le muestra a Mati, no traza técnica.
 create table transferencia_eventos (
   id               bigserial primary key,
-  organizacion_id  uuid not null references organizaciones(id) on delete restrict,
+  organizacion_id  uuid not null default fn_org() references organizaciones(id) on delete restrict,
   transferencia_id uuid not null,
   ocurrido_en      timestamptz not null default now(),
   estado_previo    estado_operacion,

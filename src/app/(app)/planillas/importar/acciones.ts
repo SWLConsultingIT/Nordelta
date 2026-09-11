@@ -5,7 +5,7 @@ import { exigirSesion } from "@/lib/auth";
 import { aResultadoError, ErrorValidacion, type Resultado } from "@/lib/domain/errors";
 import { crearPlanilla, type OperacionNueva } from "@/lib/data/operaciones";
 import { parsearPlanillaCliente } from "@/lib/planillas/cliente";
-import { almacenDeArchivos, sha256, validarArchivo } from "@/lib/data/almacenamiento";
+import { almacenDeArchivos, validarArchivo } from "@/lib/data/almacenamiento";
 import type { ClientTransfer } from "@/lib/planillas/cliente";
 
 /**
@@ -153,7 +153,7 @@ export async function accionImportar(
     // el día que discuta un importe o una fecha. Lo parseado es una
     // interpretación; el archivo es el hecho.
     const almacen = await almacenDeArchivos();
-    await almacen.guardar(`planillas/${clienteId}`, nombre, bytes);
+    const original = await almacen.guardar("planillas", nombre, bytes);
 
     const fechas = filas.map((f) => f.fechaDeposito).filter(Boolean).sort();
     const { planilla } = await crearPlanilla(
@@ -161,7 +161,8 @@ export async function accionImportar(
       nombre,
       fechas[fechas.length - 1] ?? new Date().toISOString().slice(0, 10),
       filas,
-      sha256(bytes),
+      original.sha256,
+      original.ruta,
     );
 
     for (const ruta of ["/planillas", "/conciliacion", "/clientes", "/inicio"]) {

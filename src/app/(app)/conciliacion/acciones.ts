@@ -10,7 +10,7 @@ import {
 import type { Corrida } from "@/lib/operaciones/tipos";
 import { hayCredenciales, leerConfiguracion } from "@/lib/fullcarga/config";
 import { acreditacionesConciliables, parsearInforme } from "@/lib/fullcarga/informe";
-import { almacenDeArchivos, sha256 } from "@/lib/data/almacenamiento";
+import { almacenDeArchivos } from "@/lib/data/almacenamiento";
 import { sumarDias } from "@/lib/operaciones/fechas";
 import { hoyISO } from "@/lib/format";
 
@@ -96,10 +96,10 @@ export async function accionActualizar(): Promise<Resultado<ResultadoActualizaci
 
         // El original se conserva: es la prueba de qué devolvió Fullcarga.
         const almacen = await almacenDeArchivos();
-        await almacen.guardar("informes", descarga.filename, descarga.bytes);
+        const original = await almacen.guardar("fullcarga", descarga.filename, descarga.bytes);
 
         const r = await importarInforme(
-          descarga.filename, desde, hoy, "AUTOMATICO", filas, sha256(descarga.bytes),
+          descarga.filename, desde, hoy, "AUTOMATICO", filas, original.sha256, original.ruta,
         );
         nuevas = r.nuevas;
         fullcarga = r.nuevas > 0 ? "ACTUALIZADO" : "SIN_NOVEDADES";

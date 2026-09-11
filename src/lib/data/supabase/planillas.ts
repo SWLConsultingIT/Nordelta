@@ -25,6 +25,10 @@ interface FilaPlanilla {
   fecha: string;
   recibida_en: string;
   estado: Planilla["estado"];
+  sha256: string | null;
+  storage_path: string | null;
+  filas: number;
+  total_centavos: number;
 }
 
 const aPlanilla = (f: FilaPlanilla): Planilla => ({
@@ -34,13 +38,37 @@ const aPlanilla = (f: FilaPlanilla): Planilla => ({
   fecha: f.fecha,
   importadaEn: f.recibida_en,
   estado: f.estado,
+  // Sin estos dos no se puede ir de la fila al archivo original, que es
+  // toda la razón por la que se guarda el original.
+  sha256: f.sha256,
+  storagePath: f.storage_path,
+  filas: f.filas,
+  totalCentavos: f.total_centavos,
 });
 
-const CAMPOS = "id, cliente_id, archivo, fecha, recibida_en, estado";
+const CAMPOS =
+  "id, cliente_id, archivo, fecha, recibida_en, estado, sha256, storage_path, " +
+  "filas, total_centavos";
 
 function fallo(descripcion: string, e: { message: string } | null): never {
   throw new ErrorDatos(`Falló ${descripcion}`, { causa: e?.message ?? "desconocido" });
 }
+
+/**
+ * Por qué todos los `insert` llevan `defaultToNull: false`.
+ *
+ * PostgREST arma la inserción con `json_populate_recordset`, y eso
+ * convierte **toda columna omitida en NULL**, no en su valor por defecto.
+ * El resultado era que `organizacion_id`, cuyo default es `fn_org()`,
+ * llegaba nula y la política de seguridad rechazaba la fila.
+ *
+ * La opción equivale a la cabecera `Prefer: missing=default`: lo que no
+ * se manda lo decide la base. Es justo lo que se quiere acá, porque
+ * significa que **la aplicación nunca declara a qué organización
+ * pertenece lo que escribe** —lo deduce el perfil de la sesión— y por lo
+ * tanto no hay nada que falsificar.
+ */
+const DEFECTOS = { defaultToNull: false } as const;
 
 export function repositorioPlanillas(
   sb: SupabaseClient,
@@ -52,13 +80,13 @@ export function repositorioPlanillas(
       if (clienteId) q = q.eq("cliente_id", clienteId);
       const { data, error } = await q;
       if (error) fallo("la consulta de planillas", error);
-      return (data as FilaPlanilla[]).map(aPlanilla);
+      return (data as unknown as FilaPlanilla[]).map(aPlanilla);
     },
 
     async obtener(id) {
       const { data, error } = await sb.from("planillas").select(CAMPOS).eq("id", id).maybeSingle();
       if (error) fallo("la consulta de la planilla", error);
-      return data ? aPlanilla(data as FilaPlanilla) : null;
+      return data ? aPlanilla(data as unknown as FilaPlanilla) : null;
     },
 
     async crear(datos: PlanillaNueva) {
@@ -80,7 +108,7 @@ export function repositorioPlanillas(
           fecha: datos.fecha,
           sha256: datos.sha256 ?? null,
           storage_path: datos.storagePath ?? null,
-        })
+        }, DEFECTOS)
         .select(CAMPOS)
         .single();
       if (error) {
@@ -92,7 +120,7 @@ export function repositorioPlanillas(
         }
         fallo("el alta de la planilla", error);
       }
-      return aPlanilla(data as FilaPlanilla);
+      return aPlanilla(data as unknown as FilaPlanilla);
     },
 
     async actualizarEstado(id, estado) {
@@ -108,7 +136,7 @@ export function repositorioPlanillas(
         .eq("sha256", sha256)
         .maybeSingle();
       if (error) fallo("la búsqueda de la planilla por huella", error);
-      return data ? aPlanilla(data as FilaPlanilla) : null;
+      return data ? aPlanilla(data as unknown as FilaPlanilla) : null;
     },
   };
 }

@@ -29,18 +29,18 @@ const ACTOR_DEMO = "mati@nordelta.com";
 /**
  * ¿El dominio operativo ya corre contra Postgres?
  *
- * Hoy **no**: acreditaciones, planillas y conciliación se sirven desde el
- * almacén local. Las tablas y las políticas están escritas —migraciones
- * 0006 y 0007— pero no aplicadas, y los adaptadores están a medio camino.
+ * Sí. Acreditaciones, planillas, transferencias, resoluciones e historial
+ * se leen y se escriben en la base, con seguridad por fila verificada
+ * contra dos organizaciones y el recorrido completo probado de punta a
+ * punta.
  *
- * La constante existe para que eso no se pueda olvidar. La aplicación lo
- * muestra en pantalla cuando el modo demostración está apagado: un
- * despliegue que cree estar leyendo la base y esté leyendo un archivo local
- * es exactamente el tipo de cosa que nadie descubre hasta que importa.
- *
- * Se pasa a `true` en la iteración que conecte los repositorios.
+ * La constante se queda porque su trabajo no terminó: si alguien vuelve a
+ * dejar una parte del dominio fuera de la base, esto se pone en `false` y
+ * la aplicación lo dice en pantalla. Un despliegue que cree estar leyendo
+ * la base y esté leyendo un archivo local es exactamente el tipo de cosa
+ * que nadie descubre hasta que importa.
  */
-export const OPERACIONES_MIGRADAS = false;
+export const OPERACIONES_MIGRADAS = true;
 
 const CENTAVOS = (n: number) => Math.round(n * 100);
 
@@ -542,6 +542,8 @@ export async function crearPlanilla(
   fecha: string,
   filas: readonly OperacionNueva[],
   huella?: string,
+  /** Dónde quedó el archivo original. De la fila al archivo fuente. */
+  storagePath?: string,
 ): Promise<{ planilla: Planilla; corrida: Corrida }> {
   const repos = await repositorios();
   if (filas.length === 0) {
@@ -549,7 +551,7 @@ export async function crearPlanilla(
   }
 
   const planilla = await repos.planillas.crear({
-    clienteId, archivo, fecha, sha256: huella ?? null,
+    clienteId, archivo, fecha, sha256: huella ?? null, storagePath: storagePath ?? null,
   });
   const creadas = await repos.transferencias.crearLote(planilla.id, filas);
 
@@ -593,10 +595,11 @@ export async function importarInforme(
   origen: Informe["origen"],
   filas: readonly AcreditacionNueva[],
   huella?: string,
+  storagePath?: string,
 ): Promise<{ informe: Informe; corrida: Corrida; nuevas: number }> {
   const repos = await repositorios();
   const informe = await repos.informes.registrar({
-    archivo, desde, hasta, origen, sha256: huella ?? null,
+    archivo, desde, hasta, origen, sha256: huella ?? null, storagePath: storagePath ?? null,
   });
   const { nuevas } = await repos.acreditaciones.incorporar(informe.id, filas);
   const { corrida } = await correrConciliacion(repos, "IMPORTACION_INFORME");

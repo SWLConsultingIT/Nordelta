@@ -7,7 +7,7 @@ import { importarInforme, type AcreditacionNueva } from "@/lib/data/operaciones"
 import { acreditacionesConciliables, parsearInforme } from "@/lib/fullcarga/informe";
 import { hayCredenciales, leerConfiguracion } from "@/lib/fullcarga/config";
 import { esFechaCalendario } from "@/lib/fullcarga/fechas";
-import { almacenDeArchivos, sha256, validarArchivo } from "@/lib/data/almacenamiento";
+import { almacenDeArchivos, validarArchivo } from "@/lib/data/almacenamiento";
 import type { Informe } from "@/lib/operaciones/tipos";
 
 /**
@@ -57,10 +57,10 @@ async function guardar(
 
   // El informe original se conserva igual que la planilla del cliente.
   const almacen = await almacenDeArchivos();
-  await almacen.guardar("informes", archivo, bytes);
+  const original = await almacen.guardar("fullcarga", archivo, bytes);
 
   const { informe, corrida, nuevas } = await importarInforme(
-    archivo, desde, hasta, origen, filas, sha256(bytes),
+    archivo, desde, hasta, origen, filas, original.sha256, original.ruta,
   );
   for (const ruta of ["/conciliacion", "/planillas", "/clientes", "/inicio", "/fullcarga"]) {
     revalidatePath(ruta, "layout");
