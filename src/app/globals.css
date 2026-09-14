@@ -58,17 +58,6 @@
   --color-warn-wash: #F8F1E3;
   --color-warn-line: #E2D2AC;
 
-  /* ── Portada
-     Paleta propia, y a propósito distinta de la de la aplicación. El
-     producto es azul sobre gris frío porque adentro el azul es acción;
-     la portada no tiene acciones que señalar, así que va sobre marfil y
-     grises cálidos, con el verde reservado a un solo estado. ── */
-  --color-marfil:     #FBFAF7;
-  --color-marfil-2:   #F4F2ED;
-  --color-piedra:     #E5E2DA;
-  --color-piedra-2:   #D3CFC4;
-  --color-verde:      #10513C;
-  --color-verde-wash: #EDF3F0;
 
   --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
