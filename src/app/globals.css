@@ -59,13 +59,6 @@
   --color-warn-line: #E2D2AC;
 
 
-  /* ── Portada
-     Dos colores que la aplicación no tiene y la portada sí necesita: un
-     blanco roto cálido —el gris de la aplicación es azulado y en una
-     página institucional se lee frío— y un verde financiero que aparece
-     una sola vez por pantalla. ── */
-  --color-hueso: #F7F7F3;
-  --color-verde: #23845D;
 
   --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
