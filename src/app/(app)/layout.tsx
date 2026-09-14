@@ -3,13 +3,58 @@ import { ProveedorDeAvisos } from "@/components/ui/Toast";
 import { esDemo, getOficinas } from "@/lib/data";
 import { getResumenOperativo, OPERACIONES_MIGRADAS } from "@/lib/data/operaciones";
 import { perfilActual } from "@/lib/auth";
+import { ErrorConfiguracion } from "@/lib/data/contexto";
+
+/**
+ * Un despliegue al que le falta una variable no puede decir «error del
+ * servidor».
+ *
+ * Pasó de verdad y costó horas: la aplicación fallaba cerrada —que es lo
+ * correcto— pero la pantalla decía «A server error occurred», el mensaje
+ * quedaba en los registros del proveedor, y quien despliega no tiene por
+ * qué ir a buscarlo ahí. Un error de configuración es la clase de falla que
+ * **se arregla mirándola**, así que se muestra.
+ *
+ * Lo que se muestra son **nombres de variables, nunca valores**: es
+ * exactamente lo que construye `faltantes()`, y por eso se puede poner en
+ * pantalla sin pensarlo dos veces.
+ */
+function Configuracion({ detalle }: { detalle: string }) {
+  return (
+    <div className="grid min-h-screen place-items-center bg-navy px-6 text-on-navy antialiased">
+      <div className="w-full max-w-[520px]">
+        <span className="block text-[11px] font-medium uppercase tracking-[0.14em] text-on-navy-2">
+          Configuración
+        </span>
+        <span aria-hidden className="mt-5 block h-px w-full bg-white/22" />
+        <h1 className="mt-8 text-[30px] font-semibold leading-[1.1] tracking-[-0.03em] text-white">
+          Falta configurar el entorno.
+        </h1>
+        <p className="mt-5 rounded-[3px] border border-warn-hi/35 bg-warn-hi/10 px-4 py-3 text-[14px] leading-[1.55] text-warn-hi">
+          {detalle}
+        </p>
+        <p className="mt-6 text-[14px] leading-[1.6] text-on-navy-2">
+          La aplicación no adivina el modo de datos: prefiere no arrancar antes que
+          servir la información equivocada. Cargá la variable en el entorno del
+          despliegue y volvé a publicar.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const [perfil, oficinas, resumen] = await Promise.all([
-    perfilActual(),
-    getOficinas(),
-    getResumenOperativo(),
-  ]);
+  let perfil, oficinas, resumen;
+  try {
+    [perfil, oficinas, resumen] = await Promise.all([
+      perfilActual(),
+      getOficinas(),
+      getResumenOperativo(),
+    ]);
+  } catch (e) {
+    if (e instanceof ErrorConfiguracion) return <Configuracion detalle={e.message} />;
+    throw e;
+  }
 
   return (
     <ProveedorDeAvisos>

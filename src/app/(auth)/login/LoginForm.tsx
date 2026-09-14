@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ingresar } from "@/lib/auth/acciones";
 
@@ -12,15 +12,71 @@ import { ingresar } from "@/lib/auth/acciones";
  * credenciales, y eso significaba que el camino que se probaba todos los
  * días no era el que iba a usar nadie en producción.
  *
- * En demostración se ofrece una entrada rápida, pero como acción secundaria
- * y claramente rotulada.
- *
  * Los campos se escriben acá y no se toman de `components/ui`: ese juego
  * está dibujado para la aplicación, que es clara, y sobre el azul de esta
  * pantalla hay que pelearle cada color. Son dos inputs.
+ *
+ * **Se recuerda el correo, nunca la contraseña.** El correo es el dato
+ * aburrido —el mismo todos los días— y escribirlo cada vez es fricción sin
+ * ninguna ganancia. La contraseña es lo que protege la cuenta: guardarla
+ * acá la dejaría en texto plano en el navegador, donde la lee cualquier
+ * script de la página. De eso se ocupa el administrador de contraseñas del
+ * navegador, que la cifra y la ata al origen; los `autoComplete` de abajo
+ * existen para que pueda hacer su trabajo.
  */
 
 const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(" ");
+
+/* ── El último correo usado ─────────────────────────────────────
+   Vive en el navegador y no viaja a ningún lado. Se expone como
+   un almacén externo en lugar de leerlo en un efecto: así el
+   servidor renderiza vacío, el cliente completa al hidratar, y
+   no hay un `setState` en cascada ni un desajuste de hidratación.
+                                                                  */
+
+const CLAVE = "pagos-nordelta:ultimo-correo";
+
+let escuchas: (() => void)[] = [];
+
+function suscribir(avisar: () => void) {
+  escuchas = [...escuchas, avisar];
+  return () => {
+    escuchas = escuchas.filter((e) => e !== avisar);
+  };
+}
+
+function notificar() {
+  for (const avisar of escuchas) avisar();
+}
+
+/** En una ventana privada el almacenamiento tira. No pasa nada. */
+function leerCorreo(): string {
+  try {
+    return localStorage.getItem(CLAVE) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function escribirCorreo(valor: string) {
+  try {
+    localStorage.setItem(CLAVE, valor);
+  } catch {
+    /* Almacenamiento bloqueado. */
+  }
+  notificar();
+}
+
+function borrarCorreo() {
+  try {
+    localStorage.removeItem(CLAVE);
+  } catch {
+    /* Nada que borrar. */
+  }
+  notificar();
+}
+
+/* ── Estilos de los campos ──────────────────────────────────── */
 
 const CAMPO = cx(
   "mt-2.5 h-[48px] w-full rounded-[3px] border bg-white/[0.04] px-3.5",
@@ -37,10 +93,28 @@ export function LoginForm({ demo }: { demo: boolean }) {
   const volver = params.get("volver");
   const expirada = params.get("expirada") === "1";
 
-  const [email, setEmail] = useState("");
+  const recordado = useSyncExternalStore(suscribir, leerCorreo, () => "");
+
+  /**
+   * `null` significa «todavía no lo tocó nadie»: mientras siga así, el
+   * campo muestra lo recordado. Derivarlo en el render, y no copiarlo al
+   * estado desde un efecto, es lo que evita el re-render en cascada.
+   */
+  const [tipeado, setTipeado] = useState<string | null>(null);
+  const email = tipeado ?? recordado;
+
   const [pass, setPass] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [enviando, iniciar] = useTransition();
+
+  const campoCorreo = useRef<HTMLInputElement>(null);
+  const campoClave = useRef<HTMLInputElement>(null);
+
+  // Si el correo ya está, el cursor va donde falta escribir.
+  useEffect(() => {
+    if (leerCorreo()) campoClave.current?.focus();
+    else campoCorreo.current?.focus();
+  }, []);
 
   const destino =
     volver && volver.startsWith("/") && !volver.startsWith("//") ? volver : "/inicio";
@@ -51,12 +125,23 @@ export function LoginForm({ demo }: { demo: boolean }) {
     iniciar(async () => {
       const r = await ingresar(email, pass);
       if (!r.ok) return setError(r.mensaje);
+      // Se recuerda recién cuando el ingreso salió bien: guardar un correo
+      // que la base rechazó sería enseñarle al formulario a equivocarse.
+      escribirCorreo(email.trim());
       router.push(destino);
       router.refresh();
     });
   }
 
+  function olvidar() {
+    borrarCorreo();
+    setTipeado("");
+    setPass("");
+    campoCorreo.current?.focus();
+  }
+
   const vacio = email.trim() === "" || pass === "";
+  const hayRecordado = recordado !== "" && tipeado === null;
 
   return (
     <>
@@ -71,17 +156,28 @@ export function LoginForm({ demo }: { demo: boolean }) {
 
       <form onSubmit={entrar} className="mt-10 flex flex-col gap-6" noValidate>
         <label className="block">
-          <span className={ROTULO}>Correo</span>
+          <span className="flex items-baseline justify-between gap-3">
+            <span className={ROTULO}>Correo</span>
+            {hayRecordado && (
+              <button
+                type="button"
+                onClick={olvidar}
+                className="text-[12px] text-on-navy-2 underline-offset-4 transition-colors duration-150 hover:text-on-navy hover:underline"
+              >
+                Usar otra cuenta
+              </button>
+            )}
+          </span>
           <input
             type="email"
             name="email"
             autoComplete="username"
             placeholder="nombre@nordelta.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => setTipeado(e.target.value)}
             aria-invalid={error ? true : undefined}
+            ref={campoCorreo}
             className={cx(CAMPO, error ? "border-[#F0A99A]/55" : "border-white/20")}
-            autoFocus
           />
         </label>
 
@@ -95,6 +191,7 @@ export function LoginForm({ demo }: { demo: boolean }) {
             value={pass}
             onChange={(e) => setPass(e.target.value)}
             aria-invalid={error ? true : undefined}
+            ref={campoClave}
             className={cx(CAMPO, error ? "border-[#F0A99A]/55" : "border-white/20")}
           />
         </label>
