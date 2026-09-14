@@ -1,48 +1,69 @@
 /**
- * La pieza visual de la portada.
+ * El recurso gráfico de la portada.
  *
- * No es una captura del producto ni una ilustración: es una placa de marca.
- * La decisión importa y vale explicarla, porque acá ya se probaron las otras
- * dos y las dos fallaron.
+ * Un haz de líneas que entra por la izquierda, converge y sale de la
+ * pantalla por la derecha. No está encerrado en ninguna caja y no es el
+ * protagonista: vive al doce por ciento de opacidad, detrás de la
+ * composición.
  *
- * Mostrar la aplicación de verdad publica cómo trabaja la empresa, y además
- * arrastra la portada hacia la estética de un producto de software, que no
- * es lo que Nordelta es. Dibujar una aplicación falsa —tablas con datos
- * inventados— miente, y se nota.
+ * Por qué una forma y no el producto: mostrar la aplicación de verdad
+ * publica cómo trabaja la empresa, y dibujar una aplicación falsa con
+ * datos inventados miente. Un haz de líneas no representa ningún dato, no
+ * se puede leer mal y no envejece con el producto.
  *
- * Queda la tercera: una forma. Arcos concéntricos que se abren desde un
- * núcleo sólido, en el registro de una marca financiera. No representa un
- * dato, no se puede leer mal, y no envejece con el producto.
- *
- * No renderiza texto ni números: lo que hay son coordenadas de dibujo, y
+ * No renderiza texto ni números. Los números son coordenadas de dibujo y
  * viven dentro de atributos.
  */
 
-export function Emblema() {
+/** Las seis trayectorias. La cuarta es la que va en verde. */
+const LINEAS = [
+  "M-60 24 C 320 24, 400 92, 720 92 S 1000 170, 1320 170",
+  "M-60 92 C 300 92, 420 148, 760 148 S 1010 198, 1320 198",
+  "M-60 170 C 340 170, 440 194, 780 194 S 1020 226, 1320 226",
+  "M-60 256 C 320 256, 440 240, 780 240 S 1020 254, 1320 254",
+  "M-60 340 C 300 340, 440 294, 760 294 S 1020 282, 1320 282",
+  "M-60 414 C 320 414, 460 346, 800 346 S 1030 310, 1320 310",
+];
+
+/** Donde una trayectoria cambia de dirección. */
+const NODOS: { x: number; y: number; verde?: boolean }[] = [
+  { x: 720, y: 92 },
+  { x: 760, y: 148 },
+  { x: 780, y: 240, verde: true },
+  { x: 760, y: 294 },
+];
+
+export function Flujo() {
   return (
-    <div aria-hidden className="relative w-full overflow-hidden rounded-[3px] bg-navy">
-      {/* Cuadrado exacto, sin depender de la altura del contenido. */}
-      <div className="pt-[100%]" />
-      <svg viewBox="0 0 400 400" className="absolute inset-0 h-full w-full">
-        {/* El núcleo. Da la masa que equilibra al titular del otro lado. */}
-        <path d="M400 400H268A132 132 0 0 1 400 268Z" fill="var(--color-navy-3)" />
+    <svg
+      aria-hidden
+      viewBox="0 0 1260 440"
+      preserveAspectRatio="xMaxYMid slice"
+      className="h-full w-full"
+    >
+      <g fill="none" stroke="var(--color-navy)" strokeOpacity="0.12" strokeWidth="1">
+        {LINEAS.map((d, i) => i !== 3 && <path key={i} d={d} />)}
+      </g>
 
-        {/* Los arcos que se abren desde el núcleo. */}
-        <g fill="none" stroke="var(--color-on-navy)" strokeOpacity="0.17">
-          <path d="M400 196A204 204 0 0 0 196 400" strokeWidth="1.25" />
-          <path d="M400 124A276 276 0 0 0 124 400" strokeWidth="1.25" />
-          <path d="M400 52A348 348 0 0 0 52 400" strokeWidth="1.25" />
-        </g>
+      {/* El verde aparece una sola vez en toda la página. */}
+      <path
+        d={LINEAS[3]}
+        fill="none"
+        stroke="var(--color-verde)"
+        strokeOpacity="0.55"
+        strokeWidth="1.25"
+      />
 
-        {/* El verde aparece una sola vez. En el registro financiero el
-            color es excepción, no decoración. */}
-        <path
-          d="M400 160A240 240 0 0 0 160 400"
-          fill="none"
-          stroke="#2B8462"
-          strokeWidth="2.5"
+      {NODOS.map((n, i) => (
+        <circle
+          key={i}
+          cx={n.x}
+          cy={n.y}
+          r="2.75"
+          fill={n.verde ? "var(--color-verde)" : "var(--color-navy)"}
+          fillOpacity={n.verde ? "0.7" : "0.28"}
         />
-      </svg>
-    </div>
+      ))}
+    </svg>
   );
 }
