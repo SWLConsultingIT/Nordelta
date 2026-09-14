@@ -41,29 +41,58 @@ export function Flujo() {
       preserveAspectRatio="xMaxYMid slice"
       className="h-full w-full"
     >
-      <g fill="none" stroke="#FFFFFF" strokeOpacity="0.13" strokeWidth="1">
-        {LINEAS.map((d, i) => i !== 3 && <path key={i} d={d} />)}
+      <g fill="none" stroke="#FFFFFF" strokeOpacity="0.26" strokeWidth="1">
+        {LINEAS.map(
+          (d, i) =>
+            i !== 3 && (
+              <path
+                key={i}
+                d={d}
+                pathLength={1}
+                className="anim-trazo"
+                style={{ animationDelay: `${0.35 + i * 0.13}s` }}
+              />
+            ),
+        )}
       </g>
 
       {/* Una sola línea sube de intensidad. El acento de la página es el
           blanco: no hay un segundo color que lo haga por él. */}
       <path
         d={LINEAS[3]}
+        pathLength={1}
         fill="none"
         stroke="#FFFFFF"
-        strokeOpacity="0.5"
-        strokeWidth="1.25"
+        strokeOpacity="0.92"
+        strokeWidth="1.4"
+        className="anim-trazo"
+        style={{ animationDelay: "0.74s" }}
       />
 
+      {/* Los nodos entran cuando las líneas ya se terminaron de dibujar. */}
       {NODOS.map((n, i) => (
-        <circle
-          key={i}
-          cx={n.x}
-          cy={n.y}
-          r="2.75"
-          fill="#FFFFFF"
-          fillOpacity={n.marcado ? "0.85" : "0.3"}
-        />
+        <g key={i}>
+          {n.marcado && (
+            <circle
+              cx={n.x}
+              cy={n.y}
+              r="3.2"
+              fill="#FFFFFF"
+              fillOpacity="0.28"
+              className="anim-pulso"
+              style={{ animationDelay: "3.4s" }}
+            />
+          )}
+          <circle
+            cx={n.x}
+            cy={n.y}
+            r={n.marcado ? "3.4" : "3"}
+            fill="#FFFFFF"
+            fillOpacity={n.marcado ? "1" : "0.6"}
+            className="anim-nodo"
+            style={{ animationDelay: `${2.6 + i * 0.12}s` }}
+          />
+        </g>
       ))}
     </svg>
   );

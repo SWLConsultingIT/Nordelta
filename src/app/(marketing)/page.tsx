@@ -58,7 +58,7 @@ const MARCO = "mx-auto w-full max-w-[1280px] px-6 sm:px-10 lg:px-14";
 const REJILLA = "grid grid-cols-4 gap-x-6 md:grid-cols-8 lg:grid-cols-12 lg:gap-x-8";
 
 /** Las reglas finas. Blanco muy bajo: sobre azul, un gris se ensucia. */
-const REGLA = "block h-px w-full bg-white/12";
+const REGLA = "block h-px w-full bg-white/22";
 
 const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(" ");
 
@@ -108,7 +108,7 @@ function Acceso({ grande }: { grande?: boolean }) {
 
 function Navegacion() {
   return (
-    <header className="border-b border-white/10">
+    <header className="border-b border-white/16">
       <div className={cx(MARCO, "flex h-[76px] items-center justify-between")}>
         <span className="text-[15.5px] font-semibold tracking-[-0.022em] text-on-navy">
           Pagos Nordelta
@@ -145,25 +145,42 @@ function Hero() {
       <div className={cx(MARCO, "relative w-full pt-[96px] pb-[136px] lg:pt-[15vh] lg:pb-0")}>
         <div className={REJILLA}>
           <div className="col-span-4 md:col-span-8 lg:col-span-7">
-            <Rotulo>Plataforma operativa</Rotulo>
-            <span aria-hidden className={cx("mt-5", REGLA)} />
+            <span className="anim-surgir block" style={{ animationDelay: "0.05s" }}>
+              <Rotulo>Plataforma operativa</Rotulo>
+            </span>
+            <span
+              aria-hidden
+              className={cx("mt-5 anim-extender", REGLA)}
+              style={{ animationDelay: "0.18s" }}
+            />
 
             {/* Dos líneas fijas: un titular que se reacomoda solo se lee
                 distinto en cada pantalla. */}
+            {/* Las dos líneas entran una después de la otra: el titular se
+                arma delante de quien lo lee en vez de aparecer entero. */}
             <h1
               className={cx(
                 "mt-9 text-[46px] font-semibold leading-[1.02] tracking-[-0.035em] text-white",
                 "sm:text-[58px] lg:text-[64px] xl:text-[68px]",
               )}
             >
-              Claridad
-              <br />
-              en cada operación.
+              <span className="anim-surgir block" style={{ animationDelay: "0.28s" }}>
+                Claridad
+              </span>
+              <span className="anim-surgir block" style={{ animationDelay: "0.42s" }}>
+                en cada operación.
+              </span>
             </h1>
           </div>
 
           {/* Alineado al pie del titular, no debajo. */}
-          <div className="col-span-4 mt-12 md:col-span-6 lg:col-span-4 lg:col-start-9 lg:mt-0 lg:self-end">
+          <div
+            className={cx(
+              "col-span-4 mt-12 anim-surgir",
+              "md:col-span-6 lg:col-span-4 lg:col-start-9 lg:mt-0 lg:self-end",
+            )}
+            style={{ animationDelay: "0.62s" }}
+          >
             <p className="text-[16px] leading-[1.6] text-on-navy-2">
               Pagos Nordelta centraliza conciliaciones, movimientos y seguimiento operativo
               en una única plataforma.
@@ -185,7 +202,7 @@ const CONCEPTOS = ["Centralización", "Automatización", "Trazabilidad"];
 
 function Declaracion() {
   return (
-    <section className="border-t border-white/10 bg-navy-2">
+    <section className="border-t border-white/16 bg-navy-2">
       <div className={cx(MARCO, "py-[96px] lg:py-[116px]")}>
         <div className={REJILLA}>
           <div className="col-span-4 md:col-span-2 lg:col-span-2">
@@ -218,7 +235,7 @@ function Declaracion() {
             tarjetas ni columnas: son el índice de lo que dice la frase. Van
             sobre la misma grilla de doce que el bloque de arriba, así la
             regla tiene tres puntos de apoyo en vez de un racimo. */}
-        <div className="mt-[64px] border-t border-white/14 pt-6 lg:mt-[80px]">
+        <div className="mt-[64px] border-t border-white/25 pt-6 lg:mt-[80px]">
           <ul className={cx(REJILLA, "gap-y-3")}>
             {CONCEPTOS.map((c) => (
               <li
@@ -239,7 +256,7 @@ function Declaracion() {
 
 function Cierre() {
   return (
-    <section className="border-t border-white/10 bg-navy-3">
+    <section className="border-t border-white/16 bg-navy-3">
       <div className={cx(MARCO, "py-[76px] lg:py-[84px]")}>
         <div className={cx(REJILLA, "items-end")}>
           <span
@@ -270,7 +287,7 @@ function Cierre() {
 
 function Pie() {
   return (
-    <footer className="border-t border-white/10 bg-navy">
+    <footer className="border-t border-white/16 bg-navy">
       <div
         className={cx(
           MARCO,
