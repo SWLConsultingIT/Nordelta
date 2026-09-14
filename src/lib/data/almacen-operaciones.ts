@@ -38,15 +38,36 @@ const DIRECTORIO = process.env.NORD_DATA_DIR ?? join(process.cwd(), ".data");
 const RUTA = join(DIRECTORIO, "operaciones.json");
 
 /**
- * En modo demostración no se toca el disco.
+ * Cuándo se toca el disco: **solo en modo local**, que es el de desarrollo.
  *
- * Un contenedor efímero no garantiza un sistema de archivos escribible ni
- * que lo escrito sobreviva al próximo arranque. Intentarlo igual falla en
- * el peor momento —en el primer clic de quien está mirando la
- * demostración— así que directamente no se intenta: el estado vive en
- * memoria y dura lo que dure la instancia.
+ * La regla estaba escrita al revés —«no tocar el disco solo si
+ * `DATA_MODE=demo`»— y tenía dos agujeros que se abrieron juntos en el
+ * primer despliegue real:
+ *
+ *   · con `DATA_MODE=supabase` este almacén no se usa para nada, pero
+ *     igual escribía;
+ *   · sin `DATA_MODE`, también escribía.
+ *
+ * Y lo hacía **durante la evaluación del módulo**: bastaba con importar la
+ * capa de datos para que un sistema de archivos de solo lectura tumbara la
+ * aplicación entera con un `ENOENT` sobre `/var/task/.data`, antes de que
+ * ninguna función llegara a correr y sin que nadie pudiera atraparlo.
+ *
+ * El criterio ahora es el mismo que usa `modoDatos()` para devolver
+ * `local`: pedido explícitamente, o nada declarado fuera de producción.
  */
-const SIN_DISCO = process.env.DATA_MODE === "demo";
+const CON_DISCO =
+  process.env.DATA_MODE === "local" ||
+  (process.env.DATA_MODE === undefined && process.env.NODE_ENV !== "production");
+
+/**
+ * Se apaga sola ante el primer fallo de escritura.
+ *
+ * Aunque el modo diga `local`, el disco puede no estar: un contenedor de
+ * solo lectura, un volumen lleno, un permiso. Nada de eso puede tumbar la
+ * aplicación, así que se sigue en memoria y no se vuelve a intentar.
+ */
+let escribible = true;
 
 /** Versión del formato. Si cambia el modelo, el archivo viejo se descarta. */
 const VERSION = 1;
@@ -117,7 +138,7 @@ class AlmacenOperaciones {
   }
 
   private leer(): Estado | null {
-    if (SIN_DISCO) return null;
+    if (!CON_DISCO) return null;
     try {
       if (!existsSync(RUTA)) return null;
       const crudo = JSON.parse(readFileSync(RUTA, "utf8")) as Partial<Estado>;
@@ -139,12 +160,16 @@ class AlmacenOperaciones {
    * es atómico en los sistemas de archivos que nos importan.
    */
   guardar() {
-    if (SIN_DISCO) return;
-    const dir = dirname(RUTA);
-    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    const tmp = `${RUTA}.${process.pid}.tmp`;
-    writeFileSync(tmp, JSON.stringify(this.estado), "utf8");
-    renameSync(tmp, RUTA);
+    if (!CON_DISCO || !escribible) return;
+    try {
+      const dir = dirname(RUTA);
+      if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+      const tmp = `${RUTA}.${process.pid}.tmp`;
+      writeFileSync(tmp, JSON.stringify(this.estado), "utf8");
+      renameSync(tmp, RUTA);
+    } catch {
+      escribible = false;
+    }
   }
 
   /** Identificador legible y estable dentro del proceso. */
