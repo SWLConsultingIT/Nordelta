@@ -4,13 +4,14 @@ import { Suspense } from "react";
 import { LoginForm } from "./LoginForm";
 import { esDemo } from "@/lib/data";
 
-export const metadata: Metadata = { title: "Ingresar · NORD" };
+// La plantilla del layout raíz completa « · Pagos Nordelta».
+export const metadata: Metadata = { title: "Ingresar" };
 
 /**
  * Pantalla de ingreso.
  *
  * Sobria y del mismo registro que la portada: quien llega acá ya sabe qué
- * es NORD. Una pantalla de login con argumentos de venta al costado es una
+ * es Pagos Nordelta. Una pantalla de login con argumentos de venta al lado es una
  * pantalla que no confía en que el usuario sepa dónde está.
  */
 export default function LoginPage() {
@@ -25,8 +26,8 @@ export default function LoginPage() {
             >
               N
             </span>
-            <span className="text-[14px] font-semibold tracking-[-0.015em] text-ink group-hover:text-brand">
-              Nordelta
+            <span className="text-[14px] font-semibold tracking-[-0.015em] text-ink group-hover:text-brand whitespace-nowrap">
+              Pagos Nordelta
             </span>
           </Link>
         </div>

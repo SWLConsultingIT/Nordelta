@@ -126,8 +126,8 @@ export default async function PlanillaPage({ params }: { params: Promise<{ id: s
                   <IcoArrow className="w-4 h-4" />
                 </Button>
                 <p className="mt-2 mb-0 text-[11px] text-ink-4">
-                  No genera el asiento. La regla contable la define NORD; hasta entonces el
-                  puente lo acciona una persona.
+                  No genera el asiento. La regla contable la define Nordelta; hasta entonces
+                  el puente lo acciona una persona.
                 </p>
               </>
             ) : (

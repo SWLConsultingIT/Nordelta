@@ -69,6 +69,10 @@ describe("no puede llegar a los datos", () => {
     "lib/auth",
     "lib/domain",
     "dataset",
+    // El barril de interfaz de la aplicación importa el dominio: usarlo
+    // acá mete la aplicación entera en el árbol de la portada por la
+    // puerta de atrás.
+    "components/ui",
   ];
 
   it("no importa ningún módulo de datos", () => {
@@ -182,27 +186,52 @@ describe("no muestra ninguna cifra de la operación", () => {
   });
 });
 
-describe("lo que el preview realmente renderiza", () => {
-  it("no contiene un solo dígito", async () => {
-    // La prueba más directa: se renderiza el componente y se mira el
-    // texto resultante. Si algún día alguien le pasa datos, esto falla.
-    const { renderToStaticMarkup } = await import("react-dom/server");
-    const { VentanaNord, DetalleOscuro } = await import(
-      "../src/components/marketing/VentanaNord"
-    );
+describe("lo que la portada realmente renderiza", () => {
+  /**
+   * La prueba más directa, y la única que no se puede esquivar
+   * reescribiendo el diseño: se renderiza **cada componente exportado**
+   * de la portada y se mira el texto que sale.
+   *
+   * Se descubren solos a propósito. La versión anterior nombraba dos
+   * componentes; el día que se rediseñó la portada, esos dos dejaron de
+   * existir y el control se habría quedado mirando el vacío si el
+   * compilador no hubiese avisado. Ahora agregar un componente nuevo
+   * significa quedar cubierto sin hacer nada.
+   */
+  const COMPONENTES = ARCHIVOS.filter(({ ruta }) => ruta.includes("components/marketing"));
 
-    for (const [nombre, Componente] of [
-      ["VentanaNord", VentanaNord],
-      ["DetalleOscuro", DetalleOscuro],
-    ] as const) {
-      const html = renderToStaticMarkup(<Componente />);
-      const visible = html
-        // Fuera los atributos: ahí viven los anchos y las clases.
-        .replace(/<[^>]*>/g, " ")
-        .replace(/&[a-z]+;/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-      expect(/\d/.test(visible), `${nombre} renderiza "${visible}"`).toBe(false);
+  it("hay componentes que renderizar", () => {
+    expect(COMPONENTES.length).toBeGreaterThan(0);
+  });
+
+  it("ninguno contiene un solo dígito", async () => {
+    const { renderToStaticMarkup } = await import("react-dom/server");
+
+    let renderizados = 0;
+    for (const { ruta } of COMPONENTES) {
+      const modulo: Record<string, unknown> = await import(join(RAIZ, ruta));
+
+      for (const [nombre, exportado] of Object.entries(modulo)) {
+        // Solo los componentes sin props obligatorias: los que reciben
+        // datos no existen en la portada, y si alguno apareciera, el
+        // control de importaciones ya habría fallado antes.
+        if (typeof exportado !== "function" || exportado.length > 0) continue;
+
+        const Componente = exportado as () => React.ReactNode;
+        const html = renderToStaticMarkup(<Componente />);
+        const visible = html
+          // Fuera los atributos: ahí viven los anchos y las clases.
+          .replace(/<[^>]*>/g, " ")
+          .replace(/&[a-z]+;/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        expect(/\d/.test(visible), `${ruta} · ${nombre} renderiza "${visible}"`).toBe(false);
+        renderizados++;
+      }
     }
+
+    // Que el bucle no se haya quedado sin nada que hacer.
+    expect(renderizados).toBeGreaterThan(0);
   });
 });

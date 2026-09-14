@@ -1,0 +1,18 @@
+{
+  "_comoSeUsa": [
+    "Copiá este archivo a reports/weekly/AAAA-MM-DD.json, con la fecha del VIERNES de la semana.",
+    "Si no existe, el generador lo crea en blanco la primera vez que corrés el reporte.",
+    "progressExtra: logros que el changelog no puede ver (reuniones, relevamientos, acuerdos). Van PRIMERO en el PDF.",
+    "pending: abierto de NUESTRO lado. openItems: lo que necesitamos del CLIENTE. No mezclar.",
+    "status: ON TRACK | AT RISK | BLOCKED, o null. En null el PDF sale sin sello: no se inventa.",
+    "Topes por sección: 6 progreso, 5 pendientes, 5 open items, 5 next steps. Lo que sobra se recorta y se avisa.",
+    "No poner acá datos de clientes, importes, CUIT ni credenciales."
+  ],
+  "weekStart": "",
+  "weekEnd": "",
+  "status": null,
+  "progressExtra": [],
+  "pending": [],
+  "openItems": [],
+  "nextSteps": []
+}

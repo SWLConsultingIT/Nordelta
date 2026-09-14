@@ -21,9 +21,18 @@ let db: PGlite;
 const ORG_A = "11111111-1111-4111-8111-111111111111";
 const ORG_B = "22222222-2222-4222-8222-222222222222";
 
+/**
+ * Arrancar Postgres en proceso y aplicar todas las migraciones no entra
+ * en los diez segundos que vitest da por omisión cuando la máquina está
+ * ocupada. Con el tope por omisión este archivo fallaba una de cada
+ * tres corridas sin que hubiera nada roto, que es la peor clase de test:
+ * el que enseña a ignorarlo.
+ */
+const ARRANQUE_PG = 90_000;
+
 beforeAll(async () => {
   db = await pgConMigraciones();
-});
+}, ARRANQUE_PG);
 afterAll(async () => db?.close());
 
 describe("la ruta separa por organización", () => {

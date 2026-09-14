@@ -1,5 +1,10 @@
 # NORD · Redefinición de alcance y análisis de brecha
 
+> **Nota de nombre.** Este documento es de una etapa anterior y usa «NORD»
+> como nombre del producto y como abreviatura del cliente. El nombre visible
+> pasó a ser **Pagos Nordelta**; el contenido se conserva tal cual porque
+> documenta decisiones tomadas en ese momento.
+
 > **Fase de análisis. No se modificó código, ni esquema, ni migraciones, y no
 > se implementó ninguna funcionalidad.** Verificable con `git status`.
 >

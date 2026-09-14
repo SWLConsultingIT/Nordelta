@@ -1,5 +1,10 @@
 # NORD · Automatización del flujo operativo de Mati
 
+> **Nota de nombre.** Este documento es de una etapa anterior y usa «NORD»
+> como nombre del producto y como abreviatura del cliente. El nombre visible
+> pasó a ser **Pagos Nordelta**; el contenido se conserva tal cual porque
+> documenta decisiones tomadas en ese momento.
+
 > **Fase de análisis y research. No se modificó código, ni esquema, ni
 > migraciones, ni tests, y no se implementó ninguna funcionalidad.**
 >

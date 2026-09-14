@@ -1,6 +1,13 @@
-# Nordelta Operations Platform
+# Pagos Nordelta
 
-Plataforma interna de operaciones y cuentas corrientes multi-moneda.
+Plataforma interna de operaciones, conciliaciones y cuentas corrientes
+multi-moneda.
+
+> El nombre visible del producto es **Pagos Nordelta**. Los identificadores
+> técnicos —el paquete `nordelta-ops`, el directorio del repositorio, el
+> proyecto de Supabase, el de Vercel, las tablas y las variables de entorno—
+> **no cambian**: renombrarlos rompería infraestructura ya vinculada sin
+> aportar nada.
 Reemplaza el sistema actual de Google Sheets + Apps Script + BigQuery + n8n.
 
 ## Estado

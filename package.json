@@ -23,7 +23,8 @@
     "supabase:seed": "tsx --tsconfig tsconfig.scripts.json scripts/supabase-seed.mts",
     "supabase:rls": "tsx --tsconfig tsconfig.scripts.json scripts/supabase-rls.mts",
     "supabase:verificar": "tsx --tsconfig tsconfig.scripts.json scripts/supabase-verificar.mts",
-    "supabase:recorrido": "tsx --tsconfig tsconfig.scripts.json scripts/supabase-recorrido.mts"
+    "supabase:recorrido": "tsx --tsconfig tsconfig.scripts.json scripts/supabase-recorrido.mts",
+    "weekly-report": "tsx --tsconfig tsconfig.scripts.json scripts/reporte-semanal.mts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

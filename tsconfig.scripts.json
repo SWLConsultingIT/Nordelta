@@ -1,10 +1,14 @@
 {
-  "//": "Para lo que corre con tsx fuera de Next: scripts de mantenimiento y de staging. Solo cambia la resolución de `server-only`, que Next resuelve por su cuenta y Node no.",
+  "//": "Para lo que corre con tsx fuera de Next: scripts de mantenimiento y de staging. Solo cambia la resoluci\u00f3n de `server-only`, que Next resuelve por su cuenta y Node no.",
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@/*": ["./src/*"],
-      "server-only": ["./tooling/server-only.ts"]
+      "@/*": [
+        "./src/*"
+      ],
+      "server-only": [
+        "./tooling/server-only.ts"
+      ]
     }
   }
 }

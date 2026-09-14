@@ -1,0 +1,29 @@
+{
+  "weekStart": "2026-09-07",
+  "weekEnd": "2026-09-11",
+  "status": null,
+  "progressExtra": [
+    "Se rehízo la página de acceso pública y se reforzó para que un problema de configuración del servidor no pueda dejarla fuera de servicio."
+  ],
+  "pending": [
+    "Publicar la nueva página de acceso y la corrección del ingreso: están terminadas y verificadas, falta desplegarlas.",
+    "Ampliar la lectura de planillas al formato del resto de los clientes; hoy está soportado el de uno solo.",
+    "Rotar las credenciales de servicio usadas durante el desarrollo antes de pasar a uso real.",
+    "Dejar corriendo la conciliación diaria de forma automática, hoy se dispara a mano."
+  ],
+  "openItems": [
+    "Enviar una planilla de ejemplo de cada uno de los clientes restantes, para soportar sus formatos.",
+    "Habilitar un usuario técnico dedicado de Fullcarga: los términos del servicio no permiten automatizar con una cuenta personal.",
+    "Definir si el sistema puede acreditar a mano una operación que Fullcarga no informa.",
+    "Definir si una operación pendiente se cierra alguna vez sin acreditarse, y con qué criterio.",
+    "Definir si una identidad resuelta a mano vale para todos los clientes o solo para aquel donde se resolvió.",
+    "Confirmar si «Enviado» es el total declarado por el cliente o un estado propio previo a la conciliación."
+  ],
+  "nextSteps": [
+    "Desplegar la nueva página de acceso y la corrección del ingreso en el entorno de prueba.",
+    "Probar la descarga automática del informe de Fullcarga con un usuario técnico dedicado.",
+    "Incorporar los formatos de planilla de los clientes restantes a medida que lleguen los ejemplos.",
+    "Validar con el equipo de Nordelta las definiciones listadas en Open items.",
+    "Preparar una prueba en paralelo: una semana conciliando con el sistema y a mano, para comparar resultados."
+  ]
+}

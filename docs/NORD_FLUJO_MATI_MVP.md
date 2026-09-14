@@ -1,5 +1,10 @@
 # El flujo de Mati · del motor a la pantalla
 
+> **Nota de nombre.** Este documento es de una etapa anterior y usa «NORD»
+> como nombre del producto y como abreviatura del cliente. El nombre visible
+> pasó a ser **Pagos Nordelta**; el contenido se conserva tal cual porque
+> documenta decisiones tomadas en ese momento.
+
 > El flujo que describe NORD, contrastado contra lo que el motor ya produce
 > hoy. Es un documento de diseño: **sin UI, sin Supabase, sin esquema, sin
 > deploy, sin push.**

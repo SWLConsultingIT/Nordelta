@@ -1,5 +1,10 @@
 # POC 3 · Conciliación real · `CLIENT_SAMPLE_01`
 
+> **Nota de nombre.** Este documento es de una etapa anterior y usa «NORD»
+> como nombre del producto y como abreviatura del cliente. El nombre visible
+> pasó a ser **Pagos Nordelta**; el contenido se conserva tal cual porque
+> documenta decisiones tomadas en ese momento.
+
 > Primera conciliación contra datos reales de las dos puntas: una planilla que
 > mandó un cliente y el informe de Fullcarga del 01 al 10 de septiembre de
 > 2026, descargado automáticamente.

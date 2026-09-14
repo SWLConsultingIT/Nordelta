@@ -114,7 +114,9 @@ export function Rail({
           N
         </span>
         <span className="hidden md:flex items-baseline gap-1.5 min-w-0">
-          <span className="text-on-navy text-[13.5px] font-semibold tracking-[-0.012em]">Nordelta</span>
+          <span className="text-on-navy text-[13.5px] font-semibold tracking-[-0.012em] truncate">
+            Pagos Nordelta
+          </span>
           {demo && (
             <span className="text-[9px] font-medium tracking-[0.04em] uppercase text-on-navy-3
                              border border-navy-4 rounded px-1 py-px leading-[1.4]">
